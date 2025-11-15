@@ -14,6 +14,7 @@ interface TimeSlot {
 interface DaySchedule {
   id: number;
   name: string;
+  shortName: string;
   isEnabled: boolean;
   startTime: string;
   endTime: string;
@@ -27,13 +28,13 @@ const TutorSchedule: React.FC = () => {
   const [defaultPrice, setDefaultPrice] = useState(50000);
 
   const [schedule, setSchedule] = useState<DaySchedule[]>([
-    { id: 2, name: 'Thứ 2', isEnabled: true, startTime: '08:00', endTime: '22:00', slots: [] },
-    { id: 3, name: 'Thứ 3', isEnabled: true, startTime: '08:00', endTime: '22:00', slots: [] },
-    { id: 4, name: 'Thứ 4', isEnabled: true, startTime: '08:00', endTime: '22:00', slots: [] },
-    { id: 5, name: 'Thứ 5', isEnabled: true, startTime: '08:00', endTime: '22:00', slots: [] },
-    { id: 6, name: 'Thứ 6', isEnabled: true, startTime: '08:00', endTime: '22:00', slots: [] },
-    { id: 7, name: 'Thứ 7', isEnabled: true, startTime: '08:00', endTime: '22:00', slots: [] },
-    { id: 8, name: 'Chủ nhật', isEnabled: true, startTime: '08:00', endTime: '22:00', slots: [] },
+    { id: 2, name: 'Thứ 2', shortName: 'T2', isEnabled: false, startTime: '08:00', endTime: '22:00', slots: [] },
+    { id: 3, name: 'Thứ 3', shortName: 'T3', isEnabled: true, startTime: '09:00', endTime: '22:00', slots: [] },
+    { id: 4, name: 'Thứ 4', shortName: 'T4', isEnabled: true, startTime: '08:00', endTime: '22:00', slots: [] },
+    { id: 5, name: 'Thứ 5', shortName: 'T5', isEnabled: true, startTime: '08:00', endTime: '22:00', slots: [] },
+    { id: 6, name: 'Thứ 6', shortName: 'T6', isEnabled: true, startTime: '08:00', endTime: '22:00', slots: [] },
+    { id: 7, name: 'Thứ 7', shortName: 'T7', isEnabled: false, startTime: '08:00', endTime: '22:00', slots: [] },
+    { id: 8, name: 'Chủ nhật', shortName: 'CN', isEnabled: false, startTime: '08:00', endTime: '22:00', slots: [] },
   ]);
 
   const generateTimeSlots = (startTime: string, endTime: string, duration: number): TimeSlot[] => {
@@ -53,8 +54,8 @@ const TutorSchedule: React.FC = () => {
 
       slots.push({
         id: `${startH}:${startM.toString().padStart(2, '0')}-${endH}:${endMinute.toString().padStart(2, '0')}`,
-        startTime: `${startH.toString().padStart(2, '0')}h:${startM.toString().padStart(2, '0')}`,
-        endTime: `${endH.toString().padStart(2, '0')}h:${endMinute.toString().padStart(2, '0')}`,
+        startTime: `${startH.toString().padStart(2, '0')}h`,
+        endTime: `${endH.toString().padStart(2, '0')}h`,
       });
 
       currentMinutes += duration;
@@ -63,10 +64,31 @@ const TutorSchedule: React.FC = () => {
     return slots;
   };
 
+  const getAllTimeSlots = (): string[] => {
+    const allSlots = new Set<string>();
+    schedule.forEach(day => {
+      if (day.isEnabled && day.slots.length > 0) {
+        day.slots.forEach(slot => {
+          allSlots.add(slot.id);
+        });
+      }
+    });
+    return Array.from(allSlots).sort();
+  };
+
   const handleGenerateSchedule = () => {
     const updatedSchedule = schedule.map((day) => ({
       ...day,
       slots: day.isEnabled ? generateTimeSlots(day.startTime, day.endTime, slotDuration) : [],
+    }));
+    setSchedule(updatedSchedule);
+  };
+
+  const handleApplyDefaultTime = () => {
+    const updatedSchedule = schedule.map((day) => ({
+      ...day,
+      startTime: defaultStartTime,
+      endTime: defaultEndTime,
     }));
     setSchedule(updatedSchedule);
   };
@@ -87,44 +109,53 @@ const TutorSchedule: React.FC = () => {
     );
   };
 
+  const getSlotForTime = (day: DaySchedule, timeId: string): TimeSlot | null => {
+    return day.slots.find(slot => slot.id === timeId) || null;
+  };
+
   return (
-    <div className="p-6 max-w-[1400px] mx-auto">
+    <div className="p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Lịch Làm Việc</h1>
-        <p className="text-sm text-gray-600 mt-1">Tạo lịch làm việc bằng tuần của bạn</p>
+        <p className="text-sm text-gray-500 mt-1">Tạo lịch làm việc bằng tuần của bạn</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="space-y-6">
+      <div className="grid grid-cols-1 xl:grid-cols-[400px,1fr] gap-6">
+        <div className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Cấu hình lịch</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="startTime" className="text-sm">Giờ bắt đầu</Label>
-                <Input
-                  id="startTime"
-                  type="time"
-                  value={defaultStartTime}
-                  onChange={(e) => setDefaultStartTime(e.target.value)}
-                  className="h-9"
-                />
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Giờ làm việc mặc định</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="time"
+                    value={defaultStartTime}
+                    onChange={(e) => setDefaultStartTime(e.target.value)}
+                    className="h-9 flex-1"
+                  />
+                  <span className="text-sm text-gray-500">đến</span>
+                  <Input
+                    type="time"
+                    value={defaultEndTime}
+                    onChange={(e) => setDefaultEndTime(e.target.value)}
+                    className="h-9 flex-1"
+                  />
+                </div>
+                <Button
+                  onClick={handleApplyDefaultTime}
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                >
+                  Áp dụng cho tất cả
+                </Button>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="endTime" className="text-sm">Giờ kết thúc</Label>
-                <Input
-                  id="endTime"
-                  type="time"
-                  value={defaultEndTime}
-                  onChange={(e) => setDefaultEndTime(e.target.value)}
-                  className="h-9"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="slotDuration" className="text-sm">Giờ làm việc mặc định</Label>
+                <Label htmlFor="slotDuration" className="text-sm font-medium">Thời gian slot mặc định</Label>
                 <div className="flex items-center gap-2">
                   <Input
                     id="slotDuration"
@@ -135,12 +166,12 @@ const TutorSchedule: React.FC = () => {
                     onChange={(e) => setSlotDuration(Number(e.target.value))}
                     className="h-9"
                   />
-                  <span className="text-sm text-gray-600 min-w-[40px]">phút</span>
+                  <span className="text-sm text-gray-500 min-w-[50px]">phút</span>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="defaultPrice" className="text-sm">Giá tiền slot mặc định</Label>
+                <Label htmlFor="defaultPrice" className="text-sm font-medium">Giá tiền slot mặc định</Label>
                 <div className="flex items-center gap-2">
                   <Input
                     id="defaultPrice"
@@ -151,7 +182,7 @@ const TutorSchedule: React.FC = () => {
                     onChange={(e) => setDefaultPrice(Number(e.target.value))}
                     className="h-9"
                   />
-                  <span className="text-sm text-gray-600 min-w-[40px]">VNĐ</span>
+                  <span className="text-sm text-gray-500 min-w-[50px]">VNĐ</span>
                 </div>
               </div>
             </CardContent>
@@ -161,7 +192,7 @@ const TutorSchedule: React.FC = () => {
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Chọn ngày làm việc</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-2">
               {schedule.map((day) => (
                 <div key={day.id} className="flex items-center gap-2">
                   <Checkbox
@@ -174,10 +205,6 @@ const TutorSchedule: React.FC = () => {
                   </Label>
                 </div>
               ))}
-              <div className="flex items-center gap-2 pt-2">
-                <Checkbox id="other" disabled />
-                <Label htmlFor="other" className="text-sm text-gray-400">Chủ nhật</Label>
-              </div>
             </CardContent>
           </Card>
 
@@ -187,41 +214,33 @@ const TutorSchedule: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-3">
               {schedule.filter(day => day.isEnabled).map((day) => (
-                <div key={day.id} className="space-y-2">
-                  <Label className="text-sm font-medium">{day.name}</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="flex items-center gap-1">
-                      <Input
-                        type="number"
-                        min="0"
-                        max="23"
-                        value={parseInt(day.startTime.split(':')[0])}
-                        onChange={(e) => {
-                          const hour = e.target.value.padStart(2, '0');
-                          const minute = day.startTime.split(':')[1];
-                          handleDayTimeChange(day.id, 'startTime', `${hour}:${minute}`);
-                        }}
-                        className="h-8 text-sm"
-                        placeholder="Giờ"
-                      />
-                      <span className="text-xs text-gray-600">giờ</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Input
-                        type="number"
-                        min="0"
-                        max="23"
-                        value={parseInt(day.endTime.split(':')[0])}
-                        onChange={(e) => {
-                          const hour = e.target.value.padStart(2, '0');
-                          const minute = day.endTime.split(':')[1];
-                          handleDayTimeChange(day.id, 'endTime', `${hour}:${minute}`);
-                        }}
-                        className="h-8 text-sm"
-                        placeholder="Giờ"
-                      />
-                      <span className="text-xs text-gray-600">giờ</span>
-                    </div>
+                <div key={day.id} className="space-y-1.5">
+                  <Label className="text-xs font-medium text-gray-700">{day.name}</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      max="23"
+                      value={parseInt(day.startTime.split(':')[0])}
+                      onChange={(e) => {
+                        const hour = e.target.value.padStart(2, '0');
+                        handleDayTimeChange(day.id, 'startTime', `${hour}:00`);
+                      }}
+                      className="h-8 text-sm"
+                    />
+                    <span className="text-xs text-gray-500">đến</span>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="23"
+                      value={parseInt(day.endTime.split(':')[0])}
+                      onChange={(e) => {
+                        const hour = e.target.value.padStart(2, '0');
+                        handleDayTimeChange(day.id, 'endTime', `${hour}:00`);
+                      }}
+                      className="h-8 text-sm"
+                    />
+                    <span className="text-xs text-gray-500">giờ</span>
                   </div>
                 </div>
               ))}
@@ -230,72 +249,79 @@ const TutorSchedule: React.FC = () => {
 
           <Button
             onClick={handleGenerateSchedule}
-            className="w-full bg-black hover:bg-gray-800"
+            className="w-full bg-black hover:bg-gray-800 h-10"
           >
             Tạo lịch
           </Button>
         </div>
 
-        <div className="lg:col-span-2">
-          {schedule.some((day) => day.slots.length > 0) && (
+        <div>
+          {schedule.some((day) => day.slots.length > 0) ? (
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Lịch Làm Việc</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
                 <div className="overflow-x-auto">
-                  <div className="min-w-[700px]">
-                    <div className="grid gap-px bg-gray-300" style={{
-                      gridTemplateColumns: `80px repeat(${schedule.filter(d => d.slots.length > 0).length}, 1fr)`
-                    }}>
-                      <div className="bg-black text-white font-semibold text-center py-2 text-sm">
-                        Giờ
-                      </div>
-                      {schedule.filter(day => day.slots.length > 0).map((day) => (
-                        <div
-                          key={day.id}
-                          className="bg-black text-white font-semibold text-center py-2 text-sm"
-                        >
-                          {day.name}
+                  <div className="inline-block min-w-full">
+                    <div className="border-t">
+                      <div className="grid" style={{
+                        gridTemplateColumns: `100px repeat(${schedule.filter(d => d.isEnabled).length}, minmax(90px, 1fr))`
+                      }}>
+                        <div className="bg-gray-900 text-white font-semibold text-center py-2.5 text-sm border-r border-gray-700">
+                          Giờ
                         </div>
-                      ))}
-
-                      {schedule.find(d => d.slots.length > 0)?.slots.map((_, slotIndex) => (
-                        <React.Fragment key={slotIndex}>
-                          <div className="bg-gray-100 flex items-center justify-center py-2.5 text-xs font-medium">
-                            {schedule.find(d => d.slots.length > 0)?.slots[slotIndex]?.startTime}-
-                            {schedule.find(d => d.slots.length > 0)?.slots[slotIndex]?.endTime}
+                        {schedule.filter(day => day.isEnabled).map((day) => (
+                          <div
+                            key={day.id}
+                            className="bg-gray-900 text-white font-semibold text-center py-2.5 text-sm border-r border-gray-700 last:border-r-0"
+                          >
+                            {day.shortName}
                           </div>
-                          {schedule.filter(day => day.slots.length > 0).map((day) => {
-                            const slot = day.slots[slotIndex];
-                            if (!slot) {
-                              return <div key={day.id} className="bg-white" />;
-                            }
+                        ))}
 
-                            return (
-                              <div
-                                key={day.id}
-                                className="bg-emerald-50 text-emerald-600 flex items-center justify-center py-2.5 text-xs font-medium"
-                              >
-                                {slot.startTime}-{slot.endTime}
+                        {getAllTimeSlots().map((timeId) => {
+                          const [startTime] = timeId.split('-');
+                          const [startH, startM] = startTime.split(':');
+                          const endH = String(parseInt(startH) + 1).padStart(2, '0');
+
+                          return (
+                            <React.Fragment key={timeId}>
+                              <div className="bg-gray-50 flex items-center justify-center py-2 text-xs font-medium border-r border-b border-gray-200 text-gray-700">
+                                {startH}h-{endH}h
                               </div>
-                            );
-                          })}
-                        </React.Fragment>
-                      ))}
+                              {schedule.filter(day => day.isEnabled).map((day) => {
+                                const slot = getSlotForTime(day, timeId);
+
+                                return (
+                                  <div
+                                    key={`${day.id}-${timeId}`}
+                                    className={`flex items-center justify-center py-2 text-xs font-medium border-r border-b border-gray-200 last:border-r-0 ${
+                                      slot
+                                        ? 'bg-emerald-50 text-emerald-600'
+                                        : 'bg-white'
+                                    }`}
+                                  >
+                                    {slot && `${slot.startTime}-${slot.endTime}`}
+                                  </div>
+                                );
+                              })}
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          )}
-
-          {!schedule.some((day) => day.slots.length > 0) && (
-            <Card className="h-[500px] flex items-center justify-center">
+          ) : (
+            <Card className="h-full min-h-[600px] flex items-center justify-center">
               <CardContent>
-                <p className="text-gray-400 text-center">
-                  Chưa có lịch làm việc. Vui lòng cấu hình và nhấn "Tạo lịch"
-                </p>
+                <div className="text-center text-gray-400">
+                  <p className="text-sm">Chưa có lịch làm việc</p>
+                  <p className="text-xs mt-1">Vui lòng cấu hình và nhấn "Tạo lịch"</p>
+                </div>
               </CardContent>
             </Card>
           )}
