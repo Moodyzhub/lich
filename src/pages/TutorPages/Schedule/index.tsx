@@ -4,15 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
-import { Calendar, Clock, DollarSign, Plus, Trash2 } from 'lucide-react';
 
 interface TimeSlot {
   id: string;
   startTime: string;
   endTime: string;
-  price: number;
-  isAvailable: boolean;
 }
 
 interface DaySchedule {
@@ -57,10 +53,8 @@ const TutorSchedule: React.FC = () => {
 
       slots.push({
         id: `${startH}:${startM.toString().padStart(2, '0')}-${endH}:${endMinute.toString().padStart(2, '0')}`,
-        startTime: `${startH.toString().padStart(2, '0')}:${startM.toString().padStart(2, '0')}`,
-        endTime: `${endH.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`,
-        price: defaultPrice,
-        isAvailable: true,
+        startTime: `${startH.toString().padStart(2, '0')}h:${startM.toString().padStart(2, '0')}`,
+        endTime: `${endH.toString().padStart(2, '0')}h:${endMinute.toString().padStart(2, '0')}`,
       });
 
       currentMinutes += duration;
@@ -73,15 +67,6 @@ const TutorSchedule: React.FC = () => {
     const updatedSchedule = schedule.map((day) => ({
       ...day,
       slots: day.isEnabled ? generateTimeSlots(day.startTime, day.endTime, slotDuration) : [],
-    }));
-    setSchedule(updatedSchedule);
-  };
-
-  const handleApplyDefaultTime = () => {
-    const updatedSchedule = schedule.map((day) => ({
-      ...day,
-      startTime: defaultStartTime,
-      endTime: defaultEndTime,
     }));
     setSchedule(updatedSchedule);
   };
@@ -102,251 +87,220 @@ const TutorSchedule: React.FC = () => {
     );
   };
 
-  const handleSlotToggle = (dayId: number, slotId: string) => {
-    setSchedule(
-      schedule.map((day) =>
-        day.id === dayId
-          ? {
-              ...day,
-              slots: day.slots.map((slot) =>
-                slot.id === slotId ? { ...slot, isAvailable: !slot.isAvailable } : slot
-              ),
-            }
-          : day
-      )
-    );
-  };
-
-  const handleSlotPriceChange = (dayId: number, slotId: string, price: number) => {
-    setSchedule(
-      schedule.map((day) =>
-        day.id === dayId
-          ? {
-              ...day,
-              slots: day.slots.map((slot) =>
-                slot.id === slotId ? { ...slot, price } : slot
-              ),
-            }
-          : day
-      )
-    );
-  };
-
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-3xl font-bold">Quản lý lịch làm việc</h1>
-        <p className="text-gray-600 mt-2">Thiết lập lịch làm việc và các khung giờ dạy học</p>
+    <div className="p-6 max-w-[1400px] mx-auto">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">Lịch Làm Việc</h1>
+        <p className="text-sm text-gray-600 mt-1">Tạo lịch làm việc bằng tuần của bạn</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Cài đặt mặc định
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="defaultStartTime">Giờ bắt đầu mặc định</Label>
-              <Input
-                id="defaultStartTime"
-                type="time"
-                value={defaultStartTime}
-                onChange={(e) => setDefaultStartTime(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="defaultEndTime">Giờ kết thúc mặc định</Label>
-              <Input
-                id="defaultEndTime"
-                type="time"
-                value={defaultEndTime}
-                onChange={(e) => setDefaultEndTime(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="slotDuration">Thời gian slot (phút)</Label>
-              <Input
-                id="slotDuration"
-                type="number"
-                min="15"
-                step="15"
-                value={slotDuration}
-                onChange={(e) => setSlotDuration(Number(e.target.value))}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="defaultPrice">Giá mặc định (VNĐ)</Label>
-              <Input
-                id="defaultPrice"
-                type="number"
-                min="0"
-                step="10000"
-                value={defaultPrice}
-                onChange={(e) => setDefaultPrice(Number(e.target.value))}
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <Button onClick={handleApplyDefaultTime} variant="outline">
-              Áp dụng giờ mặc định cho tất cả
-            </Button>
-            <Button onClick={handleGenerateSchedule} className="bg-emerald-600 hover:bg-emerald-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Tạo lịch
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Chọn ngày làm việc
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {schedule.map((day) => (
-              <div key={day.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                <Checkbox
-                  id={`day-${day.id}`}
-                  checked={day.isEnabled}
-                  onCheckedChange={() => handleDayToggle(day.id)}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="space-y-6">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Cấu hình lịch</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="startTime" className="text-sm">Giờ bắt đầu</Label>
+                <Input
+                  id="startTime"
+                  type="time"
+                  value={defaultStartTime}
+                  onChange={(e) => setDefaultStartTime(e.target.value)}
+                  className="h-9"
                 />
-                <Label
-                  htmlFor={`day-${day.id}`}
-                  className="font-medium min-w-[100px] cursor-pointer"
-                >
-                  {day.name} - ID:{day.id}
-                </Label>
+              </div>
 
-                <div className="flex items-center gap-3 flex-1">
-                  <div className="flex items-center gap-2">
-                    <Label className="text-sm text-gray-600">Từ:</Label>
-                    <Input
-                      type="time"
-                      value={day.startTime}
-                      onChange={(e) => handleDayTimeChange(day.id, 'startTime', e.target.value)}
-                      disabled={!day.isEnabled}
-                      className="w-32"
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="endTime" className="text-sm">Giờ kết thúc</Label>
+                <Input
+                  id="endTime"
+                  type="time"
+                  value={defaultEndTime}
+                  onChange={(e) => setDefaultEndTime(e.target.value)}
+                  className="h-9"
+                />
+              </div>
 
-                  <div className="flex items-center gap-2">
-                    <Label className="text-sm text-gray-600">Đến:</Label>
-                    <Input
-                      type="time"
-                      value={day.endTime}
-                      onChange={(e) => handleDayTimeChange(day.id, 'endTime', e.target.value)}
-                      disabled={!day.isEnabled}
-                      className="w-32"
-                    />
-                  </div>
-
-                  <div className="text-sm text-gray-500">
-                    {day.slots.length > 0 && `${day.slots.length} slots`}
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="slotDuration" className="text-sm">Giờ làm việc mặc định</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="slotDuration"
+                    type="number"
+                    min="15"
+                    step="15"
+                    value={slotDuration}
+                    onChange={(e) => setSlotDuration(Number(e.target.value))}
+                    className="h-9"
+                  />
+                  <span className="text-sm text-gray-600 min-w-[40px]">phút</span>
                 </div>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
 
-      {schedule.some((day) => day.slots.length > 0) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
-              Lịch làm việc chi tiết
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <div className="min-w-[800px]">
-                <div className="grid grid-cols-8 gap-2 mb-4">
-                  <div className="font-semibold text-center p-2 bg-gray-100 rounded">Giờ</div>
-                  {schedule.map((day) => (
-                    <div
-                      key={day.id}
-                      className={`font-semibold text-center p-2 rounded ${
-                        day.isEnabled && day.slots.length > 0
-                          ? 'bg-emerald-100 text-emerald-700'
-                          : 'bg-gray-100 text-gray-400'
-                      }`}
-                    >
-                      {day.name.replace('Thứ ', 'T')}
-                    </div>
-                  ))}
+              <div className="space-y-2">
+                <Label htmlFor="defaultPrice" className="text-sm">Giá tiền slot mặc định</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="defaultPrice"
+                    type="number"
+                    min="0"
+                    step="10000"
+                    value={defaultPrice}
+                    onChange={(e) => setDefaultPrice(Number(e.target.value))}
+                    className="h-9"
+                  />
+                  <span className="text-sm text-gray-600 min-w-[40px]">VNĐ</span>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                {schedule[0].slots.length > 0 && (
-                  <div className="space-y-2">
-                    {schedule[0].slots.map((_, slotIndex) => (
-                      <div key={slotIndex} className="grid grid-cols-8 gap-2">
-                        <div className="flex items-center justify-center p-2 bg-gray-50 rounded text-sm font-medium">
-                          {schedule[0].slots[slotIndex]?.startTime}-
-                          {schedule[0].slots[slotIndex]?.endTime}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Chọn ngày làm việc</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {schedule.map((day) => (
+                <div key={day.id} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`day-${day.id}`}
+                    checked={day.isEnabled}
+                    onCheckedChange={() => handleDayToggle(day.id)}
+                  />
+                  <Label htmlFor={`day-${day.id}`} className="text-sm cursor-pointer flex-1">
+                    {day.name}
+                  </Label>
+                </div>
+              ))}
+              <div className="flex items-center gap-2 pt-2">
+                <Checkbox id="other" disabled />
+                <Label htmlFor="other" className="text-sm text-gray-400">Chủ nhật</Label>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Tùy chỉnh giờ cho từng ngày</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {schedule.filter(day => day.isEnabled).map((day) => (
+                <div key={day.id} className="space-y-2">
+                  <Label className="text-sm font-medium">{day.name}</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        min="0"
+                        max="23"
+                        value={parseInt(day.startTime.split(':')[0])}
+                        onChange={(e) => {
+                          const hour = e.target.value.padStart(2, '0');
+                          const minute = day.startTime.split(':')[1];
+                          handleDayTimeChange(day.id, 'startTime', `${hour}:${minute}`);
+                        }}
+                        className="h-8 text-sm"
+                        placeholder="Giờ"
+                      />
+                      <span className="text-xs text-gray-600">giờ</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        min="0"
+                        max="23"
+                        value={parseInt(day.endTime.split(':')[0])}
+                        onChange={(e) => {
+                          const hour = e.target.value.padStart(2, '0');
+                          const minute = day.endTime.split(':')[1];
+                          handleDayTimeChange(day.id, 'endTime', `${hour}:${minute}`);
+                        }}
+                        className="h-8 text-sm"
+                        placeholder="Giờ"
+                      />
+                      <span className="text-xs text-gray-600">giờ</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Button
+            onClick={handleGenerateSchedule}
+            className="w-full bg-black hover:bg-gray-800"
+          >
+            Tạo lịch
+          </Button>
+        </div>
+
+        <div className="lg:col-span-2">
+          {schedule.some((day) => day.slots.length > 0) && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Lịch Làm Việc</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <div className="min-w-[700px]">
+                    <div className="grid gap-px bg-gray-300" style={{
+                      gridTemplateColumns: `80px repeat(${schedule.filter(d => d.slots.length > 0).length}, 1fr)`
+                    }}>
+                      <div className="bg-black text-white font-semibold text-center py-2 text-sm">
+                        Giờ
+                      </div>
+                      {schedule.filter(day => day.slots.length > 0).map((day) => (
+                        <div
+                          key={day.id}
+                          className="bg-black text-white font-semibold text-center py-2 text-sm"
+                        >
+                          {day.name}
                         </div>
-                        {schedule.map((day) => {
-                          const slot = day.slots[slotIndex];
-                          if (!slot) {
-                            return <div key={day.id} className="bg-gray-50 rounded" />;
-                          }
+                      ))}
 
-                          return (
-                            <div
-                              key={day.id}
-                              className={`p-2 rounded cursor-pointer transition-colors ${
-                                slot.isAvailable
-                                  ? 'bg-emerald-100 hover:bg-emerald-200 border border-emerald-300'
-                                  : 'bg-gray-100 hover:bg-gray-200 border border-gray-300'
-                              }`}
-                              onClick={() => handleSlotToggle(day.id, slot.id)}
-                            >
-                              <div className="text-xs font-medium text-center">
+                      {schedule.find(d => d.slots.length > 0)?.slots.map((_, slotIndex) => (
+                        <React.Fragment key={slotIndex}>
+                          <div className="bg-gray-100 flex items-center justify-center py-2.5 text-xs font-medium">
+                            {schedule.find(d => d.slots.length > 0)?.slots[slotIndex]?.startTime}-
+                            {schedule.find(d => d.slots.length > 0)?.slots[slotIndex]?.endTime}
+                          </div>
+                          {schedule.filter(day => day.slots.length > 0).map((day) => {
+                            const slot = day.slots[slotIndex];
+                            if (!slot) {
+                              return <div key={day.id} className="bg-white" />;
+                            }
+
+                            return (
+                              <div
+                                key={day.id}
+                                className="bg-emerald-50 text-emerald-600 flex items-center justify-center py-2.5 text-xs font-medium"
+                              >
                                 {slot.startTime}-{slot.endTime}
                               </div>
-                              <Input
-                                type="number"
-                                value={slot.price}
-                                onChange={(e) =>
-                                  handleSlotPriceChange(day.id, slot.id, Number(e.target.value))
-                                }
-                                onClick={(e) => e.stopPropagation()}
-                                className="h-6 text-xs mt-1"
-                                disabled={!slot.isAvailable}
-                              />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ))}
+                            );
+                          })}
+                        </React.Fragment>
+                      ))}
+                    </div>
                   </div>
-                )}
-              </div>
-            </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h4 className="font-semibold text-blue-900 mb-2">Hướng dẫn:</h4>
-              <ul className="text-sm text-blue-800 space-y-1">
-                <li>• Nhấp vào ô để bật/tắt slot (xanh lá = có sẵn, xám = không có sẵn)</li>
-                <li>• Chỉnh sửa giá trực tiếp trong mỗi ô</li>
-                <li>• Tùy chỉnh giờ làm việc cho từng ngày ở phần "Chọn ngày làm việc"</li>
-                <li>• Nhấn "Tạo lịch" sau khi thay đổi cài đặt để cập nhật lịch</li>
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          {!schedule.some((day) => day.slots.length > 0) && (
+            <Card className="h-[500px] flex items-center justify-center">
+              <CardContent>
+                <p className="text-gray-400 text-center">
+                  Chưa có lịch làm việc. Vui lòng cấu hình và nhấn "Tạo lịch"
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
