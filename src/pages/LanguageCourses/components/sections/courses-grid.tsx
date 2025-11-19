@@ -19,7 +19,7 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
     const navigate = useNavigate();
     const { toast } = useToast();
 
-    /** ⭐ Lưu wishlist state CHỈ 1 lần – không nằm trong .map() */
+    /** Wishlist local state */
     const [wishlistMap, setWishlistMap] = useState<Record<number, boolean>>({});
 
     useEffect(() => {
@@ -30,7 +30,7 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
         );
     }, [courses]);
 
-    /** ⭐ Toggle wishlist ở đây */
+    /** Toggle wishlist */
     const handleToggleWishlist = async (courseId: number) => {
         const token =
             localStorage.getItem("access_token") ||
@@ -89,12 +89,15 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
             </div>
         );
 
-    if (courses.length === 0)
+    /** 🟦 REMOVE purchased courses */
+    const visibleCourses = courses.filter((c) => !c.isPurchased);
+
+    if (visibleCourses.length === 0)
         return (
             <section className="py-16 text-center">
-                <h2 className="text-xl font-semibold">No courses found</h2>
+                <h2 className="text-xl font-semibold">No available courses</h2>
                 <p className="text-muted-foreground mt-2">
-                    Try adjusting search or filters.
+                    You have already purchased all courses.
                 </p>
             </section>
         );
@@ -110,13 +113,12 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
                 animate="animate"
                 variants={staggerContainer}
             >
-                {courses.map((course) => {
+                {visibleCourses.map((course) => {
                     const isWishlisted = wishlistMap[course.id] ?? false;
 
                     return (
                         <motion.div key={course.id} variants={fadeInUp}>
-                            {/* Toàn card là link */}
-                            <Link to={`/course/${course.id}`} className="block h-full">
+                            <Link to={`/courses/${course.id}`} className="block h-full">
                                 <Card className="overflow-hidden shadow-sm transition-all flex flex-col h-full rounded-xl border bg-white hover:shadow-lg">
 
                                     {/* Thumbnail */}
@@ -138,7 +140,7 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
                                             </Badge>
                                         </div>
 
-                                        {/*  Wishlist button */}
+                                        {/* Wishlist icon */}
                                         <button
                                             className="absolute top-3 right-3"
                                             onClick={(e) => {
@@ -148,7 +150,7 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
                                             }}
                                         >
                                             <Heart
-                                                className={`w-6 h-6 transition ${
+                                                className={`w-7 h-7 transition ${
                                                     isWishlisted
                                                         ? "fill-red-500 text-red-500"
                                                         : "text-white hover:text-red-500"
@@ -170,7 +172,7 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
                                             </p>
                                         </div>
 
-                                        {/* Short desc */}
+                                        {/* Short description */}
                                         <p className="text-sm text-muted-foreground line-clamp-2 min-h-[34px] mb-2">
                                             {course.shortDescription || ""}
                                         </p>
@@ -218,10 +220,10 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
                                                 onClick={(e) => {
                                                     e.preventDefault();
                                                     e.stopPropagation();
-                                                    navigate(`/course/${course.id}`);
+                                                    navigate(`/courses/${course.id}`);
                                                 }}
                                             >
-                                                {course.isPurchased ? "Continue" : "Join"}
+                                                Join
                                             </Button>
                                         </div>
 

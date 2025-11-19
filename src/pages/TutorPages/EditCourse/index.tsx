@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   AlertCircle,
@@ -27,23 +27,60 @@ import {
   deleteLesson,
   deleteResource,
   submitCourseForApproval,
+  getObjectives,
+  createObjective,
+  updateObjective,
+  deleteObjective,
 } from './edit-course-api';
+import {
+  updateCourseDraft,
+  getDraftCourseDetail,
+  getDraftObjectives,
+  createDraftObjective,
+  updateDraftObjective,
+  deleteDraftObjective,
+  createDraftSection,
+  updateDraftSection,
+  createDraftLesson,
+  updateDraftLesson,
+  updateDraftResource,
+  deleteDraftSection,
+  deleteDraftLesson,
+  deleteDraftResource,
+  createDraftResource,
+  submitCourseDraft,
+  type DraftCourseData,
+} from '@/pages/TutorPages/CourseList/draft-course-api';
 import courseApi from '@/pages/TutorPages/CreateCourse/course-api';
 import { CourseDetail, Section, Lesson, Resource } from './types';
 import { EditCourseInfo, EditCourseStructure } from './components';
+import EditCourseObjectives, { ObjectiveEditItem } from './components/edit-course-objectives';
+import { getCourseListRoute } from '@/utils/course-routes';
 
 const EditCourse = () => {
-  const { courseId } = useParams<{ courseId: string }>();
+  const { courseId, draftId } = useParams<{ courseId: string; draftId?: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   // ========== MAIN STATES ==========
   const [course, setCourse] = useState<CourseDetail | null>(null);
+  const [objectives, setObjectives] = useState<ObjectiveEditItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  // ========== DRAFT MODE STATES ==========
+  // Initialize as undefined to prevent race condition
+  const [isDraftMode, setIsDraftMode] = useState<boolean | undefined>(undefined);
+  const [currentDraftId, setCurrentDraftId] = useState<number | null>(null);
+
+  // ========== NAVIGATION HELPERS ==========
+  const handleBackToCourseList = () => {
+    navigate(getCourseListRoute());
+  };
 
   // ========== HELPER: Normalize course data ==========
   const normalizeCourseData = (courseData: CourseDetail): CourseDetail => {
@@ -65,6 +102,89 @@ const EditCourse = () => {
     };
   };
 
+  // ========== HELPER: Convert draft data to CourseDetail format ==========
+  const convertDraftToCourseDetail = (draftData: DraftCourseData, originalCourseId: number): CourseDetail => {
+    return {
+      id: originalCourseId,
+      title: draftData.title,
+      shortDescription: draftData.shortDescription,
+      description: draftData.description,
+      requirement: draftData.requirement,
+      level: draftData.level,
+      duration: draftData.duration,
+      price: draftData.price,
+      language: draftData.language,
+      thumbnailURL: draftData.thumbnailURL,
+      categoryName: draftData.categoryName,
+      status: draftData.status,
+      section: Array.isArray(draftData.section) 
+        ? draftData.section.map((section: any) => ({
+            sectionID: section.sectionID,  // Backend returns sectionID (draft ID)
+            courseID: section.courseID || originalCourseId,
+            title: section.title,
+            description: section.description || '',
+            orderIndex: section.orderIndex,
+            lessons: Array.isArray(section.lessons)
+              ? section.lessons.map((lesson: any) => ({
+                  lessonID: lesson.lessonID,  // Backend returns lessonID (draft ID)
+                  title: lesson.title,
+                  duration: lesson.duration || 0,
+                  lessonType: lesson.lessonType || 'Reading',
+                  videoURL: lesson.videoURL || '',
+                  content: lesson.content || '',
+                  orderIndex: lesson.orderIndex,
+                  createdAt: lesson.createdAt || new Date().toISOString(),
+                  resources: Array.isArray(lesson.resources)
+                    ? lesson.resources.map((resource: any) => ({
+                        resourceID: resource.resourceID,  // Backend returns resourceID (draft ID)
+                        resourceType: resource.resourceType || 'ExternalLink',
+                        resourceTitle: resource.resourceTitle,
+                        resourceURL: resource.resourceURL,
+                        uploadedAt: new Date().toISOString(),
+                        orderIndex: resource.orderIndex || 0,
+                      }))
+                    : [],
+                }))
+              : [],
+          }))
+        : [],
+    };
+  };
+
+  // ========== DETECT DRAFT MODE ==========
+  useEffect(() => {
+    // Check if we're in draft mode from URL parameters
+    if (draftId) {
+      // Draft mode detected from URL parameters (new route structure)
+      setIsDraftMode(true);
+      setCurrentDraftId(parseInt(draftId));
+    } else {
+      // Check legacy URL parameters for backward compatibility
+      const urlParams = new URLSearchParams(location.search);
+      const draftIdParam = urlParams.get('draftId');
+      const isDraftParam = urlParams.get('isDraft') === 'true';
+      
+      // Check location state for draft data (passed from CourseCard)
+      const locationState = location.state as any;
+      const draftData = locationState?.draftData;
+      const isDraftFromState = locationState?.isDraft === true;
+
+      if (draftIdParam && isDraftParam) {
+        // Draft mode detected from legacy URL parameters
+        setIsDraftMode(true);
+        setCurrentDraftId(parseInt(draftIdParam));
+      } else if (isDraftFromState && draftData) {
+        // Draft mode detected from location state
+        setIsDraftMode(true);
+        setCurrentDraftId(draftData.id);
+      } else {
+        // Regular course editing mode
+        setIsDraftMode(false);
+        setCurrentDraftId(null);
+      }
+    }
+  }, [draftId, location]);
+
   // ========== FETCH COURSE DATA ==========
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -74,24 +194,74 @@ const EditCourse = () => {
         setIsLoading(true);
         setError(null);
 
-        const courseData = await getCourseDetail(parseInt(courseId));
+        let courseData: CourseDetail;
+        
+        if (isDraftMode && currentDraftId) {
+          // DRAFT MODE: Always fetch fresh draft course data from API
+          const draftData = await getDraftCourseDetail(currentDraftId);
+          courseData = convertDraftToCourseDetail(draftData, parseInt(courseId));
+          
+          // Fetch draft objectives only
+          try {
+            const objectivesData = await getDraftObjectives(currentDraftId);
+            const formattedObjectives = objectivesData.map((obj: any) => {
+              const objectiveId = obj.objectiveDraftID || obj.objectiveID || obj.id;
+              return {
+                id: objectiveId,
+                objectiveText: obj.objectiveText,
+                orderIndex: obj.orderIndex,
+                isNew: false,
+              };
+            });
+            setObjectives(formattedObjectives);
+          } catch (objErr) {
+            console.error('Error fetching draft objectives:', objErr);
+            setObjectives([]);
+          }
+        } else if (isDraftMode === false) {
+          // REGULAR MODE: Fetch regular course data only
+          courseData = await getCourseDetail(parseInt(courseId));
+          
+          // Fetch regular objectives only
+          try {
+            const objectivesData = await getObjectives(parseInt(courseId));
+            const formattedObjectives = objectivesData.map((obj: any) => {
+              const objectiveId = obj.objectiveID || obj.id;
+              return {
+                id: objectiveId,
+                objectiveText: obj.objectiveText,
+                orderIndex: obj.orderIndex,
+                isNew: false,
+              };
+            });
+            setObjectives(formattedObjectives);
+          } catch (objErr) {
+            console.error('Error fetching regular objectives:', objErr);
+            setObjectives([]);
+          }
+        } else {
+          // Mode not determined yet
+          return;
+        }
 
         // Normalize all nested arrays
         const normalizedCourse = normalizeCourseData(courseData);
         setCourse(normalizedCourse);
       } catch (err: any) {
-        console.error('=== ERROR FETCHING COURSE ===', err);
-        setError(
-          err.message || 'Unable to load course information'
-        );
+        console.error('Error fetching course:', err);
+        setError(err.message || 'Unable to load course information');
         setCourse(null);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchCourseData();
-  }, [courseId]);
+    // Only fetch data when we have determined the mode
+    // This prevents race condition where we fetch with wrong mode
+    if (isDraftMode !== undefined) {
+      fetchCourseData();
+    }
+  }, [courseId, isDraftMode, currentDraftId]);
 
   // ========== STEP 1: UPDATE COURSE INFO ==========
   const handleStep1Save = async (
@@ -101,22 +271,37 @@ const EditCourse = () => {
 
     setIsSaving(true);
     try {
-      // Update course info
-      await updateCourse(parseInt(courseId), {
+      const updateData = {
         title: courseData.title || course.title,
+        shortDescription: courseData.shortDescription || course.shortDescription,
         description: courseData.description || course.description,
+        requirement: courseData.requirement || course.requirement,
+        level: courseData.level || course.level,
         duration: courseData.duration || course.duration,
         price: courseData.price || course.price,
         language: courseData.language || course.language,
-        thumbnailURL:
-          courseData.thumbnailURL || course.thumbnailURL,
+        thumbnailURL: courseData.thumbnailURL || course.thumbnailURL,
         categoryID: 1, // TODO: Get from form
-      });
+      };
 
-      // Re-fetch the complete course data with sections/lessons/resources
-      const updated = await getCourseDetail(parseInt(courseId));
-      const normalizedCourse = normalizeCourseData(updated);
-      setCourse(normalizedCourse);
+      if (isDraftMode && currentDraftId) {
+        // Update draft course
+        await updateCourseDraft(currentDraftId, updateData);
+        
+        // Update local state with the new data
+        setCourse({
+          ...course,
+          ...updateData,
+        });
+      } else {
+        // Update regular course
+        await updateCourse(parseInt(courseId), updateData);
+
+        // Re-fetch the complete course data with sections/lessons/resources
+        const updated = await getCourseDetail(parseInt(courseId));
+        const normalizedCourse = normalizeCourseData(updated);
+        setCourse(normalizedCourse);
+      }
 
       toast({
         title: 'Success',
@@ -147,15 +332,28 @@ const EditCourse = () => {
 
     setIsSaving(true);
     try {
-      const updated = await updateSection(sectionData.sectionID, {
+      const updateData = {
         title: sectionData.title,
         description: sectionData.description,
         orderIndex: sectionData.orderIndex,
-      });
+      };
 
-      const newSections = [...course.section];
-      newSections[sectionIndex] = updated;
-      setCourse({ ...course, section: newSections });
+      if (isDraftMode && currentDraftId) {
+        // Update draft section
+        await updateDraftSection(sectionData.sectionID, updateData);
+        
+        // Update local state
+        const newSections = [...course.section];
+        newSections[sectionIndex] = { ...sectionData };
+        setCourse({ ...course, section: newSections });
+      } else {
+        // Update regular section
+        const updated = await updateSection(sectionData.sectionID, updateData);
+        
+        const newSections = [...course.section];
+        newSections[sectionIndex] = updated;
+        setCourse({ ...course, section: newSections });
+      }
 
       toast({
         title: 'Success',
@@ -183,79 +381,146 @@ const EditCourse = () => {
 
     setIsSaving(true);
     try {
-      // 1. Update lesson basic info
-      const updated = await updateLesson(lessonData.lessonID, {
+      const lessonUpdateData = {
         title: lessonData.title,
         duration: lessonData.duration,
         lessonType: lessonData.lessonType,
         videoURL: lessonData.videoURL || '',
         content: lessonData.content || '',
         orderIndex: lessonData.orderIndex,
-      });
+      };
 
-      // 2. Handle resources
-      const originalResources = course.section[sectionIndex].lessons[lessonIndex].resources || [];
-      const updatedResources = lessonData.resources || [];
+      if (isDraftMode && currentDraftId) {
+        // Update draft lesson
+        await updateDraftLesson(lessonData.lessonID, lessonUpdateData);
+        
+        // Handle resources for draft mode
+        const originalResources = course.section[sectionIndex].lessons[lessonIndex].resources || [];
+        const updatedResources = lessonData.resources || [];
 
-      // Find new resources (no resourceID from server means it's newly created)
-      const newResources = updatedResources.filter(r => !originalResources.some(or => or.resourceID === r.resourceID));
-      
-      // Find deleted resources
-      const deletedResources = originalResources.filter(or => !updatedResources.some(r => r.resourceID === or.resourceID));
-      
-      // Find updated resources
-      const changedResources = updatedResources.filter(r => 
-        originalResources.some(or => or.resourceID === r.resourceID && (
-          or.resourceTitle !== r.resourceTitle || 
-          or.resourceURL !== r.resourceURL || 
-          or.resourceType !== r.resourceType
-        ))
-      );
+        // Find new resources
+        const newResources = updatedResources.filter(r => !originalResources.some(or => or.resourceID === r.resourceID));
+        
+        // Find deleted resources
+        const deletedResources = originalResources.filter(or => !updatedResources.some(r => r.resourceID === or.resourceID));
+        
+        // Find updated resources
+        const changedResources = updatedResources.filter(r => 
+          originalResources.some(or => or.resourceID === r.resourceID && (
+            or.resourceTitle !== r.resourceTitle || 
+            or.resourceURL !== r.resourceURL || 
+            or.resourceType !== r.resourceType
+          ))
+        );
 
-      // Create new resources
-      for (const res of newResources) {
-        if (res.resourceID > 0 && res.resourceID < 10000) {
-          // This is a locally generated ID, create it via API
-          const resourceType = res.resourceType as 'PDF' | 'ExternalLink';
-          await courseApi.addLessonResource(
-            course.id.toString(),
-            course.section[sectionIndex].sectionID.toString(),
-            lessonData.lessonID.toString(),
-            {
+        // Create new resources using draft API
+        for (const res of newResources) {
+          if (res.resourceID > 0 && res.resourceID < 10000) {
+            // This is a locally generated ID, create it via draft API
+            await createDraftResource(lessonData.lessonID, {
+              resourceType: res.resourceType as 'PDF' | 'ExternalLink',
+              resourceTitle: res.resourceTitle,
+              resourceURL: res.resourceURL,
+              orderIndex: res.orderIndex || 0,
+            });
+          }
+        }
+
+        // Update changed resources using draft API
+        for (const res of changedResources) {
+          if (res.resourceID) {
+            await updateDraftResource(res.resourceID, {
+              resourceType: res.resourceType as 'PDF' | 'ExternalLink',
+              resourceTitle: res.resourceTitle,
+              resourceURL: res.resourceURL,
+              orderIndex: res.orderIndex || 0,
+            });
+          }
+        }
+
+        // Delete removed resources using draft API
+        for (const res of deletedResources) {
+          if (res.resourceID) {
+            await deleteDraftResource(res.resourceID);
+          }
+        }
+
+        // Update local state
+        const newSections = [...course.section];
+        newSections[sectionIndex].lessons[lessonIndex] = {
+          ...lessonData,
+          resources: updatedResources,
+        };
+        setCourse({ ...course, section: newSections });
+      } else {
+        // Regular lesson update
+        // 1. Update lesson basic info
+        const updated = await updateLesson(lessonData.lessonID, lessonUpdateData);
+
+        // 2. Handle resources
+        const originalResources = course.section[sectionIndex].lessons[lessonIndex].resources || [];
+        const updatedResources = lessonData.resources || [];
+
+        // Find new resources (no resourceID from server means it's newly created)
+        const newResources = updatedResources.filter(r => !originalResources.some(or => or.resourceID === r.resourceID));
+        
+        // Find deleted resources
+        const deletedResources = originalResources.filter(or => !updatedResources.some(r => r.resourceID === or.resourceID));
+        
+        // Find updated resources
+        const changedResources = updatedResources.filter(r => 
+          originalResources.some(or => or.resourceID === r.resourceID && (
+            or.resourceTitle !== r.resourceTitle || 
+            or.resourceURL !== r.resourceURL || 
+            or.resourceType !== r.resourceType
+          ))
+        );
+
+        // Create new resources
+        for (const res of newResources) {
+          if (res.resourceID > 0 && res.resourceID < 10000) {
+            // This is a locally generated ID, create it via API
+            const resourceType = res.resourceType as 'PDF' | 'ExternalLink';
+            await courseApi.addLessonResource(
+              course.id.toString(),
+              course.section[sectionIndex].sectionID.toString(),
+              lessonData.lessonID.toString(),
+              {
+                resourceType,
+                resourceTitle: res.resourceTitle,
+                resourceURL: res.resourceURL,
+              }
+            );
+          }
+        }
+
+        // Update changed resources
+        for (const res of changedResources) {
+          if (res.resourceID) {
+            const resourceType = res.resourceType as 'PDF' | 'ExternalLink';
+            await courseApi.updateResource(res.resourceID.toString(), {
               resourceType,
               resourceTitle: res.resourceTitle,
               resourceURL: res.resourceURL,
-            }
-          );
+            });
+          }
         }
-      }
 
-      // Update changed resources
-      for (const res of changedResources) {
-        if (res.resourceID) {
-          const resourceType = res.resourceType as 'PDF' | 'ExternalLink';
-          await courseApi.updateResource(res.resourceID.toString(), {
-            resourceType,
-            resourceTitle: res.resourceTitle,
-            resourceURL: res.resourceURL,
-          });
+        // Delete removed resources
+        for (const res of deletedResources) {
+          if (res.resourceID) {
+            await courseApi.deleteResource(res.resourceID.toString());
+          }
         }
-      }
 
-      // Delete removed resources
-      for (const res of deletedResources) {
-        if (res.resourceID) {
-          await courseApi.deleteResource(res.resourceID.toString());
-        }
+        // 3. Update state with the updated lesson
+        const newSections = [...course.section];
+        newSections[sectionIndex].lessons[lessonIndex] = {
+          ...updated,
+          resources: updatedResources,
+        };
+        setCourse({ ...course, section: newSections });
       }
-
-      // 3. Update state with the updated lesson
-      const newSections = [...course.section];
-      newSections[sectionIndex].lessons[lessonIndex] = {
-        ...updated,
-        resources: updatedResources,
-      };
-      setCourse({ ...course, section: newSections });
 
       toast({
         title: 'Success',
@@ -284,17 +549,33 @@ const EditCourse = () => {
 
     setIsSaving(true);
     try {
-      const updated = await updateResource(resourceData.resourceID, {
-        resourceType: resourceData.resourceType,
+      const resourceUpdateData = {
+        resourceType: resourceData.resourceType as 'PDF' | 'ExternalLink',
         resourceTitle: resourceData.resourceTitle,
         resourceURL: resourceData.resourceURL,
-      });
+        orderIndex: resourceData.orderIndex || 0,
+      };
 
-      const newSections = [...course.section];
-      newSections[sectionIndex].lessons[lessonIndex].resources[
-        resourceIndex
-      ] = updated;
-      setCourse({ ...course, section: newSections });
+      if (isDraftMode && currentDraftId) {
+        // Update draft resource
+        await updateDraftResource(resourceData.resourceID, resourceUpdateData);
+        
+        // Update local state
+        const newSections = [...course.section];
+        newSections[sectionIndex].lessons[lessonIndex].resources[resourceIndex] = resourceData;
+        setCourse({ ...course, section: newSections });
+      } else {
+        // Update regular resource
+        const updated = await updateResource(resourceData.resourceID, {
+          resourceType: resourceData.resourceType,
+          resourceTitle: resourceData.resourceTitle,
+          resourceURL: resourceData.resourceURL,
+        });
+
+        const newSections = [...course.section];
+        newSections[sectionIndex].lessons[lessonIndex].resources[resourceIndex] = updated;
+        setCourse({ ...course, section: newSections });
+      }
 
       toast({
         title: 'Success',
@@ -305,7 +586,7 @@ const EditCourse = () => {
         err instanceof Error ? err.message : 'Failed to update resource';
       toast({
         variant: 'destructive',
-        title: 'Lỗi',
+        title: 'Error',
         description: message,
       });
     } finally {
@@ -320,7 +601,13 @@ const EditCourse = () => {
     setIsSaving(true);
 
     try {
-      await deleteSection(sectionId);
+      if (isDraftMode && currentDraftId) {
+        // Delete draft section
+        await deleteDraftSection(sectionId);
+      } else {
+        // Delete regular section
+        await deleteSection(sectionId);
+      }
 
       const newSections = course.section.filter(
         (_, i) => i !== sectionIndex
@@ -328,15 +615,15 @@ const EditCourse = () => {
       setCourse({ ...course, section: newSections });
 
       toast({
-        title: 'Thành công',
-        description: 'Chương đã được xóa',
+        title: 'Success',
+        description: 'Chapter has been deleted',
       });
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Lỗi xóa chương';
+        err instanceof Error ? err.message : 'Failed to delete chapter';
       toast({
         variant: 'destructive',
-        title: 'Lỗi',
+        title: 'Error',
         description: message,
       });
     } finally {
@@ -355,7 +642,13 @@ const EditCourse = () => {
     setIsSaving(true);
 
     try {
-      await deleteLesson(lessonId);
+      if (isDraftMode && currentDraftId) {
+        // Delete draft lesson
+        await deleteDraftLesson(lessonId);
+      } else {
+        // Delete regular lesson
+        await deleteLesson(lessonId);
+      }
 
       const newSections = [...course.section];
       newSections[sectionIndex].lessons = newSections[
@@ -364,15 +657,15 @@ const EditCourse = () => {
       setCourse({ ...course, section: newSections });
 
       toast({
-        title: 'Thành công',
-        description: 'Bài học đã được xóa',
+        title: 'Success',
+        description: 'Lesson has been deleted',
       });
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Lỗi xóa bài học';
+        err instanceof Error ? err.message : 'Failed to delete lesson';
       toast({
         variant: 'destructive',
-        title: 'Lỗi',
+        title: 'Error',
         description: message,
       });
     } finally {
@@ -391,10 +684,17 @@ const EditCourse = () => {
       course.section[sectionIndex].lessons[lessonIndex].resources[
         resourceIndex
       ].resourceID;
+    
     setIsSaving(true);
 
     try {
-      await deleteResource(resourceId);
+      if (isDraftMode && currentDraftId) {
+        // Delete draft resource
+        await deleteDraftResource(resourceId);
+      } else {
+        // Delete regular resource
+        await deleteResource(resourceId);
+      }
 
       const newSections = [...course.section];
       newSections[sectionIndex].lessons[lessonIndex].resources =
@@ -404,15 +704,102 @@ const EditCourse = () => {
       setCourse({ ...course, section: newSections });
 
       toast({
-        title: 'Thành công',
-        description: 'Tài liệu đã được xóa',
+        title: 'Success',
+        description: 'Resource has been deleted',
       });
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Lỗi xóa tài liệu';
+        err instanceof Error ? err.message : 'Failed to delete resource';
       toast({
         variant: 'destructive',
-        title: 'Lỗi',
+        title: 'Error',
+        description: message,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // ========== STEP 1.5: MANAGE OBJECTIVES ==========
+  const handleStep1aSaveObjectives = async (
+    objectivesList: ObjectiveEditItem[]
+  ) => {
+    if (!courseId) return;
+
+    setIsSaving(true);
+    try {
+      // Handle updates to existing objectives
+      for (const objective of objectivesList) {
+        if (objective.isNew || objective.id < 0) {
+          // Create new objective
+          let response;
+          
+          if (isDraftMode && currentDraftId) {
+            response = await createDraftObjective(currentDraftId, {
+              objectiveText: objective.objectiveText,
+              orderIndex: objective.orderIndex,
+            });
+          } else {
+            response = await createObjective(parseInt(courseId), {
+              objectiveText: objective.objectiveText,
+              orderIndex: objective.orderIndex,
+            });
+          }
+          
+          // Update the objective with the returned ID
+          const newId = response.objectiveDraftID || response.objectiveID || response.id;
+          objective.id = newId;
+          objective.isNew = false;
+        } else {
+          // Update existing objective
+          if (isDraftMode && currentDraftId) {
+            await updateDraftObjective(objective.id, {
+              objectiveText: objective.objectiveText,
+              orderIndex: objective.orderIndex,
+            });
+          } else {
+            await updateObjective(objective.id, {
+              objectiveText: objective.objectiveText,
+              orderIndex: objective.orderIndex,
+            });
+          }
+        }
+      }
+
+      // Handle deleted objectives
+      const oldObjectivesValid = objectives.filter(o => o.id > 0 && !o.isNew);
+      const newObjectivesValid = objectivesList.filter(o => o.id > 0);
+      
+      const oldObjectiveIds = new Set(oldObjectivesValid.map(o => o.id));
+      const newObjectiveIds = new Set(newObjectivesValid.map(o => o.id));
+      
+      const objectivesToDelete = Array.from(oldObjectiveIds).filter(id => !newObjectiveIds.has(id));
+      
+      for (const oldId of objectivesToDelete) {
+        if (oldId && typeof oldId === 'number' && oldId > 0) {
+          if (isDraftMode && currentDraftId) {
+            await deleteDraftObjective(oldId);
+          } else {
+            await deleteObjective(oldId);
+          }
+        }
+      }
+
+      setObjectives(objectivesList);
+
+      toast({
+        title: 'Success',
+        description: 'Objectives have been updated',
+      });
+
+      setCurrentStep(3);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to save objectives';
+      setError(message);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
         description: message,
       });
     } finally {
@@ -422,18 +809,34 @@ const EditCourse = () => {
 
   // ========== SUBMIT COURSE ==========
   const handleSubmitCourse = async () => {
-    if (!courseId) return;
+    if (!courseId || !course) return;
 
     setIsSaving(true);
     try {
-      await submitCourseForApproval(parseInt(courseId));
+      if (isDraftMode && currentDraftId) {
+        // Submit draft course for approval
+        await submitCourseDraft(currentDraftId);
+        
+        // Update course status to PENDING_REVIEW after successful submission
+        setCourse({
+          ...course,
+          status: 'PENDING_REVIEW'
+        });
+      } else {
+        // Submit regular course for approval
+        const updatedCourse = await submitCourseForApproval(parseInt(courseId));
+        
+        // Update course with response from API (includes updated status)
+        setCourse(updatedCourse);
+      }
+      
       setShowSuccessModal(true);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Lỗi gửi khóa học';
+        err instanceof Error ? err.message : 'Failed to submit course';
       toast({
         variant: 'destructive',
-        title: 'Lỗi',
+        title: 'Error',
         description: message,
       });
     } finally {
@@ -447,23 +850,39 @@ const EditCourse = () => {
 
     setIsSaving(true);
     try {
-      // Call API để create section
-      const result = await courseApi.addSection(
-        course.id.toString(),
-        {
-          courseID: course.id,
-          title: newSection.title,
-          description: newSection.description || null,
-          orderIndex: course.section.length,
-        }
-      );
+      let sectionWithId: Section;
 
-      // Cập nhật state với section mới từ API response
-      const sectionWithId: Section = {
-        ...newSection,
-        sectionID: parseInt(result.sectionId),
-        lessons: [],
-      };
+      if (isDraftMode && currentDraftId) {
+        // Create draft section
+        const result = await createDraftSection(currentDraftId, {
+          title: newSection.title,
+          description: newSection.description || '',
+          orderIndex: course.section.length,
+        });
+
+        sectionWithId = {
+          ...newSection,
+          sectionID: result.sectionID,
+          lessons: [],
+        };
+      } else {
+        // Create regular section
+        const result = await courseApi.addSection(
+          course.id.toString(),
+          {
+            courseID: course.id,
+            title: newSection.title,
+            description: newSection.description || null,
+            orderIndex: course.section.length,
+          }
+        );
+
+        sectionWithId = {
+          ...newSection,
+          sectionID: parseInt(result.sectionId),
+          lessons: [],
+        };
+      }
 
       setCourse({
         ...course,
@@ -498,26 +917,45 @@ const EditCourse = () => {
     try {
       const sectionId = course.section[sectionIndex].sectionID;
 
-      // Call API để create lesson
-      const result = await courseApi.addLesson(
-        course.id.toString(),
-        sectionId.toString(),
-        {
+      let lessonWithId: Lesson;
+
+      if (isDraftMode && currentDraftId) {
+        // Create draft lesson
+        const result = await createDraftLesson(sectionId, {
           title: newLesson.title,
           duration: newLesson.duration,
           lessonType: newLesson.lessonType,
           videoURL: newLesson.videoURL || '',
           content: newLesson.content || '',
           orderIndex: course.section[sectionIndex].lessons.length,
-        }
-      );
+        });
 
-      // Cập nhật state với lesson mới từ API response
-      const lessonWithId: Lesson = {
-        ...newLesson,
-        lessonID: parseInt(result.lessonId),
-        resources: [],
-      };
+        lessonWithId = {
+          ...newLesson,
+          lessonID: result.lessonID,
+          resources: [],
+        };
+      } else {
+        // Create regular lesson
+        const result = await courseApi.addLesson(
+          course.id.toString(),
+          sectionId.toString(),
+          {
+            title: newLesson.title,
+            duration: newLesson.duration,
+            lessonType: newLesson.lessonType,
+            videoURL: newLesson.videoURL || '',
+            content: newLesson.content || '',
+            orderIndex: course.section[sectionIndex].lessons.length,
+          }
+        );
+
+        lessonWithId = {
+          ...newLesson,
+          lessonID: parseInt(result.lessonId),
+          resources: [],
+        };
+      }
 
       const newSections = [...course.section];
       newSections[sectionIndex].lessons = [
@@ -557,23 +995,40 @@ const EditCourse = () => {
       const lessonId =
         course.section[sectionIndex].lessons[lessonIndex].lessonID;
 
-      // Call API để create resource
-      const result = await courseApi.addLessonResource(
-        course.id.toString(),
-        sectionId.toString(),
-        lessonId.toString(),
-        {
+      let resourceWithId: Resource;
+
+      if (isDraftMode && currentDraftId) {
+        // Create draft resource
+        const result = await createDraftResource(lessonId, {
           resourceType: newResource.resourceType as 'PDF' | 'ExternalLink',
           resourceTitle: newResource.resourceTitle,
           resourceURL: newResource.resourceURL,
-        }
-      );
+          orderIndex: course.section[sectionIndex].lessons[lessonIndex].resources.length,
+        });
 
-      // Cập nhật state với resource mới từ API response
-      const resourceWithId: Resource = {
-        ...newResource,
-        resourceID: parseInt(result.resourceId),
-      };
+        resourceWithId = {
+          ...newResource,
+          resourceID: result.resourceID,
+          orderIndex: result.orderIndex,
+        };
+      } else {
+        // Create regular resource
+        const result = await courseApi.addLessonResource(
+          course.id.toString(),
+          sectionId.toString(),
+          lessonId.toString(),
+          {
+            resourceType: newResource.resourceType as 'PDF' | 'ExternalLink',
+            resourceTitle: newResource.resourceTitle,
+            resourceURL: newResource.resourceURL,
+          }
+        );
+
+        resourceWithId = {
+          ...newResource,
+          resourceID: parseInt(result.resourceId),
+        };
+      }
 
       const newSections = [...course.section];
       newSections[sectionIndex].lessons[lessonIndex].resources = [
@@ -620,7 +1075,7 @@ const EditCourse = () => {
         <div className="max-w-4xl mx-auto">
           <Button
             variant="outline"
-            onClick={() => navigate('/courses')}
+            onClick={handleBackToCourseList}
             className="mb-6 gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -651,7 +1106,7 @@ const EditCourse = () => {
   // ========== SUCCESS MODAL ==========
   const handleCloseSuccessModal = () => {
     setShowSuccessModal(false);
-    navigate('/courses');
+    navigate(getCourseListRoute());
   };
 
   return (
@@ -659,9 +1114,31 @@ const EditCourse = () => {
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-8">
+          {/* Breadcrumb Navigation */}
+          <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-4">
+            <button
+              onClick={handleBackToCourseList}
+              className="hover:text-blue-600 transition-colors"
+            >
+              Courses
+            </button>
+            <span>/</span>
+            <span className="text-gray-900 font-medium">
+              {isDraftMode ? 'Edit Draft' : 'Edit Course'}
+            </span>
+            {isDraftMode && (
+              <>
+                <span>/</span>
+                <span className="text-orange-600 font-medium">
+                  Draft #{currentDraftId}
+                </span>
+              </>
+            )}
+          </nav>
+
           <Button
             variant="outline"
-            onClick={() => navigate('/courses')}
+            onClick={handleBackToCourseList}
             className="mb-4 gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -671,10 +1148,15 @@ const EditCourse = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                Edit Course
+                {isDraftMode ? 'Edit Course Draft' : 'Edit Course'}
               </h1>
               <p className="text-gray-600">
                 {course.title}
+                {isDraftMode && (
+                  <span className="ml-2 px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded-full">
+                    Draft Mode
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -683,7 +1165,8 @@ const EditCourse = () => {
         {/* Step Indicator */}
         <div className="mb-8">
           <div className="flex items-center justify-center">
-            <div className="flex items-center w-full max-w-md">
+            <div className="flex items-center w-full max-w-2xl">
+              {/* Step 1: Course Information */}
               <div className="flex flex-col items-center flex-1">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
@@ -699,28 +1182,59 @@ const EditCourse = () => {
                   )}
                 </div>
                 <span className="mt-2 text-sm font-medium">
-                  Course Information
+                  Information
                 </span>
               </div>
 
+              {/* Line 1 */}
               <div
                 className={`h-1 flex-1 mx-4 ${
                   currentStep > 1 ? 'bg-green-500' : 'bg-gray-300'
                 }`}
               />
 
+              {/* Step 2: Learning Objectives */}
               <div className="flex flex-col items-center flex-1">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
                     currentStep === 2
                       ? 'bg-blue-500 text-white'
+                      : currentStep > 2
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-300 text-gray-600'
+                  }`}
+                >
+                  {currentStep > 2 ? (
+                    <CheckCircle2 className="w-6 h-6" />
+                  ) : (
+                    '2'
+                  )}
+                </div>
+                <span className="mt-2 text-sm font-medium">
+                  Objectives
+                </span>
+              </div>
+
+              {/* Line 2 */}
+              <div
+                className={`h-1 flex-1 mx-4 ${
+                  currentStep > 2 ? 'bg-green-500' : 'bg-gray-300'
+                }`}
+              />
+
+              {/* Step 3: Course Content */}
+              <div className="flex flex-col items-center flex-1">
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
+                    currentStep === 3
+                      ? 'bg-blue-500 text-white'
                       : 'bg-gray-300 text-gray-600'
                   }`}
                 >
-                  2
+                  3
                 </div>
                 <span className="mt-2 text-sm font-medium">
-                  Course Content
+                  Content
                 </span>
               </div>
             </div>
@@ -737,11 +1251,13 @@ const EditCourse = () => {
         {/* Content Card */}
         <Card>
           <CardHeader>
-            <CardTitle>
+            {/* <CardTitle>
               {currentStep === 1
                 ? 'Step 1: Course Information'
-                : 'Step 2: Manage Content'}
-            </CardTitle>
+                : currentStep === 2
+                  ? 'Step 2: Learning Objectives'
+                  : 'Step 3: Manage Content'}
+            </CardTitle> */}
           </CardHeader>
           <CardContent>
             {currentStep === 1 && (
@@ -753,6 +1269,38 @@ const EditCourse = () => {
             )}
 
             {currentStep === 2 && (
+              <div className="space-y-4">
+                <EditCourseObjectives
+                  objectives={objectives}
+                  isLoading={isSaving}
+                  onChange={setObjectives}
+                />
+                <div className="flex gap-3 justify-between pt-6 ">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentStep(1)}
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    onClick={() => handleStep1aSaveObjectives(objectives)}
+                    disabled={isSaving}
+                    className="gap-2"
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Continue'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {currentStep === 3 && (
               <EditCourseStructure
                 course={course}
                 onUpdateSection={handleStep2UpdateSection}
@@ -764,7 +1312,7 @@ const EditCourse = () => {
                 onCreateSection={handleCreateSection}
                 onCreateLesson={handleCreateLesson}
                 onCreateResource={handleCreateResource}
-                onBack={() => setCurrentStep(1)}
+                onBack={() => setCurrentStep(2)}
                 onSubmit={handleSubmitCourse}
                 isSubmitting={isSaving}
               />
@@ -786,10 +1334,13 @@ const EditCourse = () => {
               </div>
             </div>
             <DialogTitle className="text-2xl font-bold text-gray-900">
-              🎉 Update Successful!
+              🎉 {isDraftMode ? 'Draft Submitted!' : 'Update Successful!'}
             </DialogTitle>
             <DialogDescription className="text-base text-gray-600">
-              Your course has been updated and submitted successfully.
+              {isDraftMode 
+                ? 'Your course draft has been submitted for review successfully.'
+                : 'Your course has been updated and submitted successfully.'
+              }
             </DialogDescription>
           </DialogHeader>
 
@@ -803,11 +1354,11 @@ const EditCourse = () => {
               </p>
             </div>
 
-            <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
+            <div className="bg-gradient-to-r from-orange-50 to-orange-100 p-4 rounded-lg border border-orange-200">
               <p className="text-sm text-gray-600 mb-1">
                 📊 Status
               </p>
-              <p className="font-semibold text-green-600">
+              <p className="font-semibold text-orange-600">
                 {course.status}
               </p>
             </div>

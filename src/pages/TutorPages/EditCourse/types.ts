@@ -5,6 +5,14 @@ export interface Resource {
   resourceTitle: string;
   resourceURL: string;
   uploadedAt: string;
+  orderIndex?: number;
+}
+
+// Objective types
+export interface Objective {
+  id: number;
+  objectiveText: string;
+  orderIndex: number;
 }
 
 // Lesson types
@@ -34,11 +42,15 @@ export interface Section {
 export interface CourseDetail {
   id: number;
   title: string;
+  shortDescription: string;
   description: string;
+  requirement: string;
+  level: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
   duration: number;
   price: number;
   language: string;
   thumbnailURL: string;
+  categoryID?: number;
   categoryName: string;
   status: string;
   section: Section[];
@@ -54,7 +66,10 @@ export interface ApiResponse<T> {
 // Update request types
 export interface UpdateCourseRequest {
   title: string;
+  shortDescription: string;
   description: string;
+  requirement: string;
+  level: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
   duration: number;
   price: number;
   language: string;

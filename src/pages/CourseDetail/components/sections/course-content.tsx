@@ -3,7 +3,7 @@ import { BookOpen, ChevronDown, ChevronRight, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
-import lesson from "@/pages/LessonDetail/lesson.tsx";
+
 
 interface CourseContentProps {
     course: {
@@ -78,16 +78,17 @@ const CourseContent = ({ course, isPurchased }: CourseContentProps) => {
             return;
         }
 
-        navigate(`/lesson/${lesson.lessonID}`, {
+        navigate(`/lesson/${lessonId}`, {
             state: { courseId: course.id }
         });
+
 
     };
 
     return (
         <div className="lg:col-span-2">
 
-            {/* 🎯 OBJECTIVES SECTION */}
+            {/*  OBJECTIVES SECTION */}
             <motion.div
                 className="bg-white rounded-xl p-8 shadow-md mb-8"
                 initial="initial"
@@ -111,7 +112,7 @@ const CourseContent = ({ course, isPurchased }: CourseContentProps) => {
                 )}
             </motion.div>
 
-            {/* 📌 REQUIREMENTS SECTION */}
+            {/*  REQUIREMENTS SECTION */}
             <motion.div
                 className="bg-white rounded-xl p-8 shadow-md mb-8"
                 initial="initial"
@@ -125,7 +126,7 @@ const CourseContent = ({ course, isPurchased }: CourseContentProps) => {
                 </p>
             </motion.div>
 
-            {/* 📘 COURSE CURRICULUM */}
+            {/*  COURSE CURRICULUM */}
             {course.section && (
                 <motion.div
                     className="bg-white rounded-xl p-8 shadow-md mb-8"
