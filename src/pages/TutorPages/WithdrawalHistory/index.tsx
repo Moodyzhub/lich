@@ -115,7 +115,7 @@ export default function WithdrawalHistoryPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="sticky top-0 z-10 bg-white shadow-md">
-        <div className="bg-gradient-to-r from-slate-700 via-gray-700 to-zinc-700">
+        <div className="bg-gradient-to-r from-teal-600 via-cyan-600 to-blue-600">
           <div className="max-w-[1600px] mx-auto px-6 py-5">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
@@ -132,7 +132,7 @@ export default function WithdrawalHistoryPage() {
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-white">Lịch sử rút tiền</h1>
-                  <p className="text-gray-200 text-sm">Theo dõi các yêu cầu rút tiền của bạn</p>
+                  <p className="text-cyan-100 text-sm">Theo dõi các yêu cầu rút tiền của bạn</p>
                 </div>
               </div>
             </div>
