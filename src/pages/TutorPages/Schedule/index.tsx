@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,7 +26,9 @@ import {
   CalendarDays,
   ExternalLink,
   CheckCircle2,
+  Loader2,
 } from 'lucide-react';
+import { scheduleApi, BookedSession } from './schedule-api';
 
 const MOCK_AVAILABLE_SCHEDULE = {
   Monday: ['09:00', '10:00', '14:00', '15:00', '16:00'],
@@ -204,11 +207,47 @@ const getWeekDates = (currentDate: Date) => {
 
 export default function TutorSchedule() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedSession, setSelectedSession] = useState<typeof MOCK_BOOKED_SESSIONS[0] | null>(null);
+  const [selectedSession, setSelectedSession] = useState<BookedSession | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
 
+  const [bookedSessions, setBookedSessions] = useState<BookedSession[]>([]);
+  const [availableSchedule, setAvailableSchedule] = useState<Record<string, string[]>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const weekDates = getWeekDates(currentDate);
+
+  useEffect(() => {
+    fetchScheduleData();
+  }, [currentDate]);
+
+  const fetchScheduleData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const startDate = weekDates[0].toISOString().split('T')[0];
+      const endDate = weekDates[6].toISOString().split('T')[0];
+
+      const [sessionsData, scheduleData] = await Promise.all([
+        scheduleApi.getBookedSessions(startDate, endDate),
+        scheduleApi.getAvailableSchedule(),
+      ]);
+
+      setBookedSessions(sessionsData);
+      setAvailableSchedule(scheduleData);
+    } catch (err: any) {
+      console.error('Error fetching schedule:', err);
+      setError(err.message);
+      toast.error(err.message || 'Không thể tải lịch làm việc');
+
+      setBookedSessions([]);
+      setAvailableSchedule(MOCK_AVAILABLE_SCHEDULE);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handlePreviousWeek = () => {
     const newDate = new Date(currentDate);
@@ -228,7 +267,7 @@ export default function TutorSchedule() {
 
   const getSessionsForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return MOCK_BOOKED_SESSIONS.filter(session => session.date === dateStr);
+    return bookedSessions.filter(session => session.date === dateStr);
   };
 
   const getSessionAtTime = (date: Date, timeSlot: string) => {
@@ -238,27 +277,27 @@ export default function TutorSchedule() {
 
   const isSlotAvailable = (date: Date, timeSlot: string) => {
     const dayName = DAYS_OF_WEEK[date.getDay()];
-    return MOCK_AVAILABLE_SCHEDULE[dayName as keyof typeof MOCK_AVAILABLE_SCHEDULE]?.includes(timeSlot) || false;
+    return availableSchedule[dayName]?.includes(timeSlot) || false;
   };
 
-  const handleSessionClick = (session: typeof MOCK_BOOKED_SESSIONS[0]) => {
+  const handleSessionClick = (session: BookedSession) => {
     setSelectedSession(session);
     setShowDetailModal(true);
   };
 
-  const totalAvailableSlots = Object.values(MOCK_AVAILABLE_SCHEDULE).reduce((sum, slots) => sum + slots.length, 0);
-  const bookedSlotsThisWeek = MOCK_BOOKED_SESSIONS.filter(s => {
+  const totalAvailableSlots = Object.values(availableSchedule).reduce((sum, slots) => sum + slots.length, 0);
+  const bookedSlotsThisWeek = bookedSessions.filter(s => {
     const sessionDate = new Date(s.date);
     return sessionDate >= weekDates[0] && sessionDate <= weekDates[6];
   }).length;
 
   const stats = {
-    todaySessions: MOCK_BOOKED_SESSIONS.filter(s => s.date === new Date().toISOString().split('T')[0]).length,
+    todaySessions: bookedSessions.filter(s => s.date === new Date().toISOString().split('T')[0]).length,
     weekSessions: bookedSlotsThisWeek,
     totalAvailableSlots: totalAvailableSlots,
     availableThisWeek: weekDates.reduce((sum, date) => {
       const dayName = DAYS_OF_WEEK[date.getDay()];
-      const availableCount = MOCK_AVAILABLE_SCHEDULE[dayName as keyof typeof MOCK_AVAILABLE_SCHEDULE]?.length || 0;
+      const availableCount = availableSchedule[dayName]?.length || 0;
       const bookedCount = getSessionsForDate(date).length;
       return sum + (availableCount - bookedCount);
     }, 0),
@@ -268,6 +307,17 @@ export default function TutorSchedule() {
     const today = new Date();
     return date.toDateString() === today.toDateString();
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Đang tải lịch làm việc...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
