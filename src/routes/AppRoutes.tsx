@@ -56,6 +56,7 @@ import TutorSettings from '@/pages/TutorPages/Settings';
 import TutorPackages from '@/pages/TutorPages/Packages';
 import TutorCourseDetailPage from '@/pages/TutorPages/CourseDetail';
 import TutorWithdrawal from '@/pages/TutorPages/Withdrawal';
+import TutorWithdrawalHistory from '@/pages/TutorPages/WithdrawalHistory';
 import Messages from '@/pages/MessagesPage/boxchat.tsx';
 import BookTutor from '@/pages/BookTutor/book-tutor.tsx';
 
@@ -127,6 +128,7 @@ export function AppRoutes() {
             <Route path="/packages" element={<TutorPackages />} />
             <Route path="/payments" element={<TutorPayment />} />
             <Route path="/withdrawal" element={<TutorWithdrawal />} />
+            <Route path="/withdrawal-history" element={<TutorWithdrawalHistory />} />
             <Route path="/messages" element={<TutorMessages />} />
             <Route path="/resources" element={<TutorResources />} />
             <Route path="/settings" element={<TutorSettings />} />

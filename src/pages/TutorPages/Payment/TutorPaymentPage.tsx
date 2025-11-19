@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Loader2, CreditCard, Filter, DollarSign } from 'lucide-react';
+import { AlertCircle, Loader2, CreditCard, Filter, DollarSign, History } from 'lucide-react';
 import { tutorPaymentApi } from './api';
 import { Payment, PaymentFilters } from './types';
 import { calculateStats } from './utils';
@@ -124,13 +124,22 @@ export default function TutorPaymentPage() {
                   <p className="text-blue-100 text-sm">Theo dõi các giao dịch thanh toán</p>
                 </div>
               </div>
-              <Button
-                onClick={() => navigate('/withdrawal')}
-                className="bg-white text-blue-600 hover:bg-blue-50 font-semibold shadow-lg"
-              >
-                <DollarSign className="w-4 h-4 mr-2" />
-                Rút tiền
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => navigate('/withdrawal-history')}
+                  className="bg-white text-gray-700 hover:bg-gray-50 font-semibold shadow-lg"
+                >
+                  <History className="w-4 h-4 mr-2" />
+                  Lịch sử rút tiền
+                </Button>
+                <Button
+                  onClick={() => navigate('/withdrawal')}
+                  className="bg-white text-blue-600 hover:bg-blue-50 font-semibold shadow-lg"
+                >
+                  <DollarSign className="w-4 h-4 mr-2" />
+                  Rút tiền
+                </Button>
+              </div>
             </div>
             
             {/* Payment Statistics */}
