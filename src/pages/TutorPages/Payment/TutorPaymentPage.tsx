@@ -1,12 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Loader2, CreditCard, Filter } from 'lucide-react';
+import { AlertCircle, Loader2, CreditCard, Filter, DollarSign } from 'lucide-react';
 import { tutorPaymentApi } from './api';
 import { Payment, PaymentFilters } from './types';
 import { calculateStats } from './utils';
 import { Filters, PaymentTable, PaymentStats } from './components';
 
 export default function TutorPaymentPage() {
+  const navigate = useNavigate();
+
   // State management
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -108,7 +111,7 @@ export default function TutorPaymentPage() {
       {/* ========== STICKY HEADER ========== */}
       <div className="sticky top-0 z-10 bg-white shadow-md">
         {/* Gradient Top Bar with Stats */}
-        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">
+        <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700">
           <div className="max-w-[1600px] mx-auto px-6 py-5">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
@@ -121,6 +124,13 @@ export default function TutorPaymentPage() {
                   <p className="text-blue-100 text-sm">Theo dõi các giao dịch thanh toán</p>
                 </div>
               </div>
+              <Button
+                onClick={() => navigate('/withdrawal')}
+                className="bg-white text-blue-600 hover:bg-blue-50 font-semibold shadow-lg"
+              >
+                <DollarSign className="w-4 h-4 mr-2" />
+                Rút tiền
+              </Button>
             </div>
             
             {/* Payment Statistics */}
