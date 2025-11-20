@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
+import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,26 +24,12 @@ import {
   Filter,
   CalendarDays,
   ExternalLink,
-  CheckCircle2,
-  Loader2,
 } from 'lucide-react';
-import { scheduleApi, BookedSession } from './schedule-api';
-
-const MOCK_AVAILABLE_SCHEDULE = {
-  Monday: ['09:00', '10:00', '14:00', '15:00', '16:00'],
-  Tuesday: ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'],
-  Wednesday: ['09:00', '10:00', '13:00', '14:00', '15:00'],
-  Thursday: ['09:00', '10:00', '13:00', '14:00', '16:00', '17:00'],
-  Friday: ['09:00', '10:00', '14:00', '15:00', '16:00'],
-  Saturday: ['10:00', '11:00', '14:00', '15:00'],
-  Sunday: ['14:00', '15:00'],
-};
 
 const MOCK_BOOKED_SESSIONS = [
   {
     id: 1,
-    date: '2024-11-20',
-    dayOfWeek: 3,
+    date: '2025-11-20',
     startTime: '09:00',
     endTime: '10:00',
     studentName: 'Nguyễn Văn An',
@@ -61,8 +46,7 @@ const MOCK_BOOKED_SESSIONS = [
   },
   {
     id: 2,
-    date: '2024-11-20',
-    dayOfWeek: 3,
+    date: '2025-11-20',
     startTime: '14:00',
     endTime: '15:00',
     studentName: 'Trần Thị Bình',
@@ -79,8 +63,7 @@ const MOCK_BOOKED_SESSIONS = [
   },
   {
     id: 3,
-    date: '2024-11-21',
-    dayOfWeek: 4,
+    date: '2025-11-21',
     startTime: '10:00',
     endTime: '11:00',
     studentName: 'Lê Hoàng Minh',
@@ -97,8 +80,7 @@ const MOCK_BOOKED_SESSIONS = [
   },
   {
     id: 4,
-    date: '2024-11-22',
-    dayOfWeek: 5,
+    date: '2025-11-22',
     startTime: '13:00',
     endTime: '14:00',
     studentName: 'Phạm Thu Hà',
@@ -115,8 +97,7 @@ const MOCK_BOOKED_SESSIONS = [
   },
   {
     id: 5,
-    date: '2024-11-22',
-    dayOfWeek: 5,
+    date: '2025-11-22',
     startTime: '16:00',
     endTime: '17:00',
     studentName: 'Hoàng Văn Đức',
@@ -133,10 +114,9 @@ const MOCK_BOOKED_SESSIONS = [
   },
   {
     id: 6,
-    date: '2024-11-23',
-    dayOfWeek: 6,
-    startTime: '10:00',
-    endTime: '11:00',
+    date: '2025-11-23',
+    startTime: '09:00',
+    endTime: '10:00',
     studentName: 'Nguyễn Văn An',
     studentAvatar: 'https://i.pravatar.cc/150?img=1',
     studentEmail: 'nguyenvanan@email.com',
@@ -151,8 +131,7 @@ const MOCK_BOOKED_SESSIONS = [
   },
   {
     id: 7,
-    date: '2024-11-24',
-    dayOfWeek: 0,
+    date: '2025-11-24',
     startTime: '15:00',
     endTime: '16:00',
     studentName: 'Trần Thị Bình',
@@ -169,8 +148,7 @@ const MOCK_BOOKED_SESSIONS = [
   },
 ];
 
-const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const DAYS_OF_WEEK_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const TIME_SLOTS = [
   '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00',
   '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
@@ -207,47 +185,11 @@ const getWeekDates = (currentDate: Date) => {
 
 export default function TutorSchedule() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedSession, setSelectedSession] = useState<BookedSession | null>(null);
+  const [selectedSession, setSelectedSession] = useState<typeof MOCK_BOOKED_SESSIONS[0] | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
 
-  const [bookedSessions, setBookedSessions] = useState<BookedSession[]>([]);
-  const [availableSchedule, setAvailableSchedule] = useState<Record<string, string[]>>({});
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
   const weekDates = getWeekDates(currentDate);
-
-  useEffect(() => {
-    fetchScheduleData();
-  }, [currentDate]);
-
-  const fetchScheduleData = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const startDate = weekDates[0].toISOString().split('T')[0];
-      const endDate = weekDates[6].toISOString().split('T')[0];
-
-      const [sessionsData, scheduleData] = await Promise.all([
-        scheduleApi.getBookedSessions(startDate, endDate),
-        scheduleApi.getAvailableSchedule(),
-      ]);
-
-      setBookedSessions(sessionsData);
-      setAvailableSchedule(scheduleData);
-    } catch (err: any) {
-      console.error('Error fetching schedule:', err);
-      setError(err.message);
-      toast.error(err.message || 'Không thể tải lịch làm việc');
-
-      setBookedSessions([]);
-      setAvailableSchedule(MOCK_AVAILABLE_SCHEDULE);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handlePreviousWeek = () => {
     const newDate = new Date(currentDate);
@@ -267,7 +209,7 @@ export default function TutorSchedule() {
 
   const getSessionsForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return bookedSessions.filter(session => session.date === dateStr);
+    return MOCK_BOOKED_SESSIONS.filter(session => session.date === dateStr);
   };
 
   const getSessionAtTime = (date: Date, timeSlot: string) => {
@@ -275,49 +217,25 @@ export default function TutorSchedule() {
     return sessions.find(session => session.startTime === timeSlot);
   };
 
-  const isSlotAvailable = (date: Date, timeSlot: string) => {
-    const dayName = DAYS_OF_WEEK[date.getDay()];
-    return availableSchedule[dayName]?.includes(timeSlot) || false;
-  };
-
-  const handleSessionClick = (session: BookedSession) => {
+  const handleSessionClick = (session: typeof MOCK_BOOKED_SESSIONS[0]) => {
     setSelectedSession(session);
     setShowDetailModal(true);
   };
 
-  const totalAvailableSlots = Object.values(availableSchedule).reduce((sum, slots) => sum + slots.length, 0);
-  const bookedSlotsThisWeek = bookedSessions.filter(s => {
-    const sessionDate = new Date(s.date);
-    return sessionDate >= weekDates[0] && sessionDate <= weekDates[6];
-  }).length;
-
   const stats = {
-    todaySessions: bookedSessions.filter(s => s.date === new Date().toISOString().split('T')[0]).length,
-    weekSessions: bookedSlotsThisWeek,
-    totalAvailableSlots: totalAvailableSlots,
-    availableThisWeek: weekDates.reduce((sum, date) => {
-      const dayName = DAYS_OF_WEEK[date.getDay()];
-      const availableCount = availableSchedule[dayName]?.length || 0;
-      const bookedCount = getSessionsForDate(date).length;
-      return sum + (availableCount - bookedCount);
-    }, 0),
+    todaySessions: MOCK_BOOKED_SESSIONS.filter(s => s.date === new Date().toISOString().split('T')[0]).length,
+    weekSessions: MOCK_BOOKED_SESSIONS.filter(s => {
+      const sessionDate = new Date(s.date);
+      return sessionDate >= weekDates[0] && sessionDate <= weekDates[6];
+    }).length,
+    confirmedSessions: MOCK_BOOKED_SESSIONS.filter(s => s.status === 'confirmed').length,
+    pendingSessions: MOCK_BOOKED_SESSIONS.filter(s => s.status === 'pending').length,
   };
 
   const isToday = (date: Date) => {
     const today = new Date();
     return date.toDateString() === today.toDateString();
   };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Đang tải lịch làm việc...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -330,7 +248,7 @@ export default function TutorSchedule() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white">Lịch làm việc</h1>
-                <p className="text-blue-100 text-sm">Xem lịch khả dụng và các buổi học đã được đặt</p>
+                <p className="text-blue-100 text-sm">Xem và quản lý các buổi học đã được đặt</p>
               </div>
             </div>
 
@@ -339,20 +257,8 @@ export default function TutorSchedule() {
                 <CardContent className="pt-4 pb-3 px-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-xs font-medium text-white/80 mb-1">Slot khả dụng tuần</div>
-                      <div className="text-2xl font-bold">{stats.availableThisWeek}</div>
-                    </div>
-                    <CheckCircle2 className="w-8 h-8 text-white/60" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white">
-                <CardContent className="pt-4 pb-3 px-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-xs font-medium text-white/80 mb-1">Đã book tuần này</div>
-                      <div className="text-2xl font-bold">{stats.weekSessions}</div>
+                      <div className="text-xs font-medium text-white/80 mb-1">Hôm nay</div>
+                      <div className="text-2xl font-bold">{stats.todaySessions}</div>
                     </div>
                     <CalendarDays className="w-8 h-8 text-white/60" />
                   </div>
@@ -363,8 +269,20 @@ export default function TutorSchedule() {
                 <CardContent className="pt-4 pb-3 px-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-xs font-medium text-white/80 mb-1">Tổng slot đăng ký</div>
-                      <div className="text-2xl font-bold">{stats.totalAvailableSlots}</div>
+                      <div className="text-xs font-medium text-white/80 mb-1">Tuần này</div>
+                      <div className="text-2xl font-bold">{stats.weekSessions}</div>
+                    </div>
+                    <BookOpen className="w-8 h-8 text-white/60" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white">
+                <CardContent className="pt-4 pb-3 px-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-medium text-white/80 mb-1">Đã xác nhận</div>
+                      <div className="text-2xl font-bold">{stats.confirmedSessions}</div>
                     </div>
                     <Clock className="w-8 h-8 text-white/60" />
                   </div>
@@ -375,10 +293,10 @@ export default function TutorSchedule() {
                 <CardContent className="pt-4 pb-3 px-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-xs font-medium text-white/80 mb-1">Buổi hôm nay</div>
-                      <div className="text-2xl font-bold">{stats.todaySessions}</div>
+                      <div className="text-xs font-medium text-white/80 mb-1">Chờ xác nhận</div>
+                      <div className="text-2xl font-bold">{stats.pendingSessions}</div>
                     </div>
-                    <BookOpen className="w-8 h-8 text-white/60" />
+                    <Package className="w-8 h-8 text-white/60" />
                   </div>
                 </CardContent>
               </Card>
@@ -408,21 +326,7 @@ export default function TutorSchedule() {
                   </Button>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-green-100 border border-green-300"></div>
-                    <span className="text-gray-600">Khả dụng</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-gradient-to-br from-blue-500 to-indigo-600"></div>
-                    <span className="text-gray-600">Đã book</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-white border border-gray-200"></div>
-                    <span className="text-gray-600">Không khả dụng</span>
-                  </div>
-                </div>
+              <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm">
                   <Filter className="w-4 h-4 mr-2" />
                   Lọc
@@ -450,7 +354,7 @@ export default function TutorSchedule() {
                       }`}
                     >
                       <div className="text-xs text-gray-500 mb-1">
-                        {DAYS_OF_WEEK_SHORT[date.getDay()]}
+                        {DAYS_OF_WEEK[date.getDay()]}
                       </div>
                       <div className={`text-lg font-semibold ${
                         isToday(date) ? 'text-blue-600' : 'text-gray-900'
@@ -472,8 +376,6 @@ export default function TutorSchedule() {
                       </div>
                       {weekDates.map((date, dayIndex) => {
                         const session = getSessionAtTime(date, timeSlot);
-                        const isAvailable = isSlotAvailable(date, timeSlot);
-
                         return (
                           <div
                             key={`${dayIndex}-${timeIndex}`}
@@ -481,7 +383,7 @@ export default function TutorSchedule() {
                               isToday(date) ? 'bg-blue-50/30' : ''
                             }`}
                           >
-                            {session ? (
+                            {session && (
                               <div
                                 onClick={() => handleSessionClick(session)}
                                 className="h-full bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg p-2 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105"
@@ -510,14 +412,7 @@ export default function TutorSchedule() {
                                   </div>
                                 </div>
                               </div>
-                            ) : isAvailable ? (
-                              <div className="h-full bg-green-50 border border-green-200 rounded-lg p-2 flex items-center justify-center hover:bg-green-100 transition-colors">
-                                <div className="text-center">
-                                  <CheckCircle2 className="w-4 h-4 text-green-600 mx-auto mb-1" />
-                                  <div className="text-[10px] text-green-700 font-medium">Khả dụng</div>
-                                </div>
-                              </div>
-                            ) : null}
+                            )}
                           </div>
                         );
                       })}
