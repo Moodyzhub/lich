@@ -43,9 +43,9 @@ export function ApplicationForm({ onSubmit, isSubmitting = false }: ApplicationF
   return (
     <Card className="w-full max-w-3xl mx-auto">
       <CardHeader>
-        <CardTitle>Apply to Become a Tutor</CardTitle>
+        <CardTitle>Đăng ký trở thành gia sư</CardTitle>
         <CardDescription>
-          Fill out the form below to submit your application to become a tutor on our platform.
+          Điền vào biểu mẫu dưới đây để gửi đơn đăng ký trở thành gia sư trên nền tảng của chúng tôi.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -57,11 +57,11 @@ export function ApplicationForm({ onSubmit, isSubmitting = false }: ApplicationF
               name="experience"
               render={({ field, fieldState }) => (
                 <FormItem>
-                  <FormLabel>Experience (years) *</FormLabel>
+                  <FormLabel>Kinh nghiệm (năm) *</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
-                      placeholder="Enter your years of teaching experience"
+                      placeholder="Nhập số năm kinh nghiệm giảng dạy của bạn"
                       {...field}
                       onChange={(e) => field.onChange(e.target.valueAsNumber)}
                       disabled={isSubmitting}
@@ -75,7 +75,7 @@ export function ApplicationForm({ onSubmit, isSubmitting = false }: ApplicationF
                     />
                   </FormControl>
                   <FormDescription id="experience-description">
-                    How many years of teaching experience do you have?
+                    Bạn có bao nhiêu năm kinh nghiệm giảng dạy?
                   </FormDescription>
                   <FormMessage id="experience-error" />
                 </FormItem>
@@ -88,10 +88,10 @@ export function ApplicationForm({ onSubmit, isSubmitting = false }: ApplicationF
               name="specialization"
               render={({ field, fieldState }) => (
                 <FormItem>
-                  <FormLabel>Specialization *</FormLabel>
+                  <FormLabel>Chuyên môn *</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g., Mathematics, English, Programming"
+                      placeholder="Ví dụ: Toán học, Tiếng Anh, Lập trình"
                       {...field}
                       disabled={isSubmitting}
                       className={cn(
@@ -104,7 +104,7 @@ export function ApplicationForm({ onSubmit, isSubmitting = false }: ApplicationF
                     />
                   </FormControl>
                   <FormDescription id="specialization-description">
-                    What is your area of expertise?
+                    Lĩnh vực chuyên môn của bạn là gì?
                   </FormDescription>
                   <FormMessage id="specialization-error" />
                 </FormItem>
@@ -117,10 +117,10 @@ export function ApplicationForm({ onSubmit, isSubmitting = false }: ApplicationF
               name="teachingLanguage"
               render={({ field, fieldState }) => (
                 <FormItem>
-                  <FormLabel>Teaching Language *</FormLabel>
+                  <FormLabel>Ngôn ngữ giảng dạy *</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g., English, Vietnamese, Spanish"
+                      placeholder="Ví dụ: Tiếng Anh, Tiếng Việt, Tiếng Tây Ban Nha"
                       {...field}
                       disabled={isSubmitting}
                       className={cn(
@@ -133,7 +133,7 @@ export function ApplicationForm({ onSubmit, isSubmitting = false }: ApplicationF
                     />
                   </FormControl>
                   <FormDescription id="teaching-language-description">
-                    What language will you primarily teach in?
+                    Bạn sẽ chủ yếu giảng dạy bằng ngôn ngữ nào?
                   </FormDescription>
                   <FormMessage id="teaching-language-error" />
                 </FormItem>
@@ -152,10 +152,10 @@ export function ApplicationForm({ onSubmit, isSubmitting = false }: ApplicationF
                 
                 return (
                   <FormItem>
-                    <FormLabel>Bio *</FormLabel>
+                    <FormLabel>Tiểu sử *</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Tell us about yourself, your teaching philosophy, and why you want to become a tutor..."
+                        placeholder="Hãy cho chúng tôi biết về bản thân, triết lý giảng dạy và lý do bạn muốn trở thành gia sư..."
                         className={cn(
                           'min-h-[120px] resize-none transition-all duration-200',
                           fieldState.error && 'border-red-500 focus-visible:ring-red-500',
@@ -169,7 +169,7 @@ export function ApplicationForm({ onSubmit, isSubmitting = false }: ApplicationF
                     </FormControl>
                     <div className="flex items-center justify-between">
                       <FormDescription id="bio-description">
-                        Minimum 50 characters. Share your background and teaching approach.
+                        Tối thiểu 50 ký tự. Chia sẻ về lý lịch và phương pháp giảng dạy của bạn.
                       </FormDescription>
                       <span 
                         className={cn(
@@ -193,9 +193,9 @@ export function ApplicationForm({ onSubmit, isSubmitting = false }: ApplicationF
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <FormLabel>Certificates *</FormLabel>
+                  <FormLabel>Chứng chỉ *</FormLabel>
                   <FormDescription>
-                    Add at least one certificate to demonstrate your qualifications
+                    Thêm ít nhất một chứng chỉ để chứng minh trình độ của bạn
                   </FormDescription>
                 </div>
               </div>
@@ -223,10 +223,10 @@ export function ApplicationForm({ onSubmit, isSubmitting = false }: ApplicationF
                       name={`certificates.${index}.certificateName`}
                       render={({ field, fieldState }) => (
                         <FormItem>
-                          <FormLabel>Certificate Name</FormLabel>
+                          <FormLabel>Tên chứng chỉ</FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="e.g., TESOL Certificate, Master's Degree in Education"
+                              placeholder="Ví dụ: Chứng chỉ TESOL, Thạc sĩ Giáo dục"
                               {...field}
                               disabled={isSubmitting}
                               className={cn(
@@ -249,11 +249,11 @@ export function ApplicationForm({ onSubmit, isSubmitting = false }: ApplicationF
                       name={`certificates.${index}.documentUrl`}
                       render={({ field, fieldState }) => (
                         <FormItem>
-                          <FormLabel>Document URL</FormLabel>
+                          <FormLabel>URL tài liệu</FormLabel>
                           <FormControl>
                             <Input
                               type="url"
-                              placeholder="https://example.com/certificate.pdf"
+                              placeholder="https://example.com/chung-chi.pdf"
                               {...field}
                               disabled={isSubmitting}
                               className={cn(
@@ -283,7 +283,7 @@ export function ApplicationForm({ onSubmit, isSubmitting = false }: ApplicationF
                 aria-label="Add another certificate"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add Certificate
+                Thêm chứng chỉ
               </Button>
             </div>
 
@@ -300,9 +300,9 @@ export function ApplicationForm({ onSubmit, isSubmitting = false }: ApplicationF
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Submitting...
+                  Đang gửi...
                 </span>
-              ) : 'Submit Application'}
+              ) : 'Gửi đơn đăng ký'}
             </Button>
           </form>
         </Form>

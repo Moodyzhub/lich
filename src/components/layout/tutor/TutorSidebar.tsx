@@ -4,14 +4,14 @@ import {
   LayoutDashboard,
   BookOpen,
   Users,
-  Settings,
   Calendar,
-  FileText,
   MessageSquare,
   CreditCard,
   Package,
+  CalendarCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ROUTES } from '@/constants/routes';
 
 interface TutorSidebarProps {
   isOpen: boolean;
@@ -25,50 +25,55 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   {
-    title: 'Dashboard',
-    href: '/dashboard',
+    title: 'Tổng quan',
+    href: ROUTES.TUTOR_DASHBOARD,
     icon: LayoutDashboard,
   },
   {
-    title: 'My Courses',
-    href: '/courses',
+    title: 'Khóa học của tôi',
+    href: ROUTES.TUTOR_COURSES,
     icon: BookOpen,
   },
   {
-    title: 'Students',
-    href: '/students',
+    title: 'Học viên',
+    href: ROUTES.TUTOR_STUDENTS,
     icon: Users,
   },
   {
-    title: 'Schedule',
-    href: '/schedule',
+    title: 'Lịch dạy',
+    href: ROUTES.TUTOR_SCHEDULE,
     icon: Calendar,
   },
   {
-    title: 'Packages',
-    href: '/packages',
+    title: 'Lịch đã đặt',
+    href: ROUTES.TUTOR_BOOKED_SLOTS,
+    icon: CalendarCheck,
+  },
+  {
+    title: 'Gói dịch vụ',
+    href: ROUTES.TUTOR_PACKAGES,
     icon: Package,
   },
   {
-    title: 'Messages',
-    href: '/messages',
+    title: 'Tin nhắn',
+    href: ROUTES.TUTOR_MESSAGES,
     icon: MessageSquare,
   },
   {
-      title: 'Quản lý thanh toán',
-      href: '/payments',
-      icon: CreditCard,
-    },
-  {
-    title: 'Resources',
-    href: '/resources',
-    icon: FileText,
+    title: 'Quản lý thanh toán',
+    href: ROUTES.PAYMENTS,
+    icon: CreditCard,
   },
-  {
-    title: 'Settings',
-    href: '/settings',
-    icon: Settings,
-  },
+  // {
+  //   title: 'Tài nguyên',
+  //   href: '/resources',
+  //   icon: FileText,
+  // },
+  // {
+  //   title: 'Cài đặt',
+  //   href: '/settings',
+  //   icon: Settings,
+  // },
 ];
 
 const TutorSidebar: React.FC<TutorSidebarProps> = ({ isOpen }) => {

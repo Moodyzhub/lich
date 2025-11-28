@@ -81,10 +81,10 @@ const PopularLanguages = () => {
               variants={fadeInUp}
           >
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Popular Languages
+              Ngôn ngữ phổ biến
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Explore the most popular languages and learn with native tutors
+              Khám phá các ngôn ngữ phổ biến nhất và học với gia sư bản ngữ
             </p>
           </motion.div>
 
@@ -134,7 +134,7 @@ const PopularLanguages = () => {
                 to="/languages"
                 className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-full font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-300"
             >
-              <span>View all languages</span>
+              <span>Xem tất cả ngôn ngữ</span>
             </Link>
           </motion.div>
         </div>

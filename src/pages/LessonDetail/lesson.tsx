@@ -8,10 +8,8 @@ import { ROUTES } from "@/constants/routes";
 import LessonHeader from "./components/sections/lesson-header";
 import LessonContent from "./components/sections/lesson-content";
 import LessonSidebar from "./components/sections/lesson-sidebar";
+import QuizLesson from "./components/lesson-types/quiz-lesson";
 
-/* ============================================================
-   TYPE DEFINITIONS — chuẩn backend
-============================================================ */
 
 interface CourseResource {
   resourceID: number;
@@ -83,9 +81,6 @@ interface LessonData {
   } | null;
 }
 
-/* ============================================================
-   MAIN COMPONENT
-============================================================ */
 
 const LessonDetail: React.FC = () => {
   const { id } = useParams();
@@ -104,14 +99,11 @@ const LessonDetail: React.FC = () => {
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string | null>(null);
 
-  /* ============================================================
-        FETCH LESSON
-  ============================================================ */
   React.useEffect(() => {
     const fetchLesson = async () => {
       if (!id) return;
       if (!courseId) {
-        setError("Missing courseId. Please return from the course page.");
+        setError("Thiếu courseId. Vui lòng quay lại từ trang khóa học.");
         return;
       }
 
@@ -139,7 +131,7 @@ const LessonDetail: React.FC = () => {
         }
 
         if (!foundLesson) {
-          setError("Lesson not found in this course.");
+          setError("Không tìm thấy bài học trong khóa học này.");
           return;
         }
 
@@ -172,9 +164,7 @@ const LessonDetail: React.FC = () => {
               foundLesson.videoUrl ||
               foundLesson.video ||
               null,
-
           isDone: foundLesson.isDone,
-
           nextLesson: nextLesson
               ? {
                 id: nextLesson.lessonID,
@@ -184,23 +174,19 @@ const LessonDetail: React.FC = () => {
               : null,
         });
       } catch {
-        setError("Failed to load lesson.");
+        setError("Không thể tải bài học.");
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchLesson();
   }, [id, courseId]);
 
-  /* ============================================================
-        UI STATES
-  ============================================================ */
 
   if (isLoading) {
     return (
         <div className="min-h-screen flex items-center justify-center">
-          Loading...
+          Đang tải...
         </div>
     );
   }
@@ -217,11 +203,6 @@ const LessonDetail: React.FC = () => {
         </div>
     );
   }
-
-  /* ============================================================
-        PAGE UI
-  ============================================================ */
-
   return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
         <LessonHeader
@@ -229,7 +210,6 @@ const LessonDetail: React.FC = () => {
             courseId={courseId}
             courseTitle={courseTitle}
         />
-
         <section className="py-12">
           <div className="max-w-7xl mx-auto px-8 lg:px-16">
             <motion.div
@@ -238,12 +218,11 @@ const LessonDetail: React.FC = () => {
                 animate={{opacity: 1, y: 0}}
                 transition={{duration: 0.6}}
             >
-              <div className="lg:col-span-2">
-                <LessonContent lesson={lesson} courseId={courseId}/>
-              </div>
-
-
-              {/* Truyền đúng dạng cho Sidebar */}
+              {lesson.lessonType?.trim().toLowerCase() === "quiz" ? (
+                <QuizLesson lesson={lesson} courseId={courseId} />
+              ) : (
+                <LessonContent lesson={lesson} courseId={courseId} />
+              )}
               <LessonSidebar
                   lesson={lesson}
                   course={{id: courseData.id}}

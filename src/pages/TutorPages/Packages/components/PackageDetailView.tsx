@@ -48,7 +48,7 @@ const PackageDetailView: React.FC<PackageDetailViewProps> = ({
       const data = await tutorPackageApi.getPackageById(packageId);
       setPackageData(data);
     } catch (err: any) {
-      setError(err.message || 'Không thể tải thông tin package');
+      setError(err.message || 'Không thể tải thông tin gói dịch vụ');
       console.error('Error fetching package details:', err);
     } finally {
       setIsLoading(false);
@@ -82,7 +82,7 @@ const PackageDetailView: React.FC<PackageDetailViewProps> = ({
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
             <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-            <p className="text-gray-600">Đang tải thông tin package...</p>
+            <p className="text-gray-600">Đang tải thông tin gói dịch vụ...</p>
           </div>
         </div>
       </div>

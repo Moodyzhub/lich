@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import api from "@/config/axiosConfig.ts";
+import { useToast } from "@/components/ui/use-toast";
 import CourseHeroSection from "./components/sections/hero-section";
 import CourseContent from "./components/sections/course-content";
 import CourseSidebar from "./components/sections/course-sidebar";
@@ -77,6 +78,9 @@ interface CourseDetailResponse {
 
 const CourseDetail = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [course, setCourse] = useState<CourseDetailResponse | null>(null);
   const [wishlisted, setWishlisted] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -108,6 +112,26 @@ const CourseDetail = () => {
 
     fetchCourseDetail();
   }, [id]);
+
+  // ============ CHECK PAYMENT SUCCESS ============
+  useEffect(() => {
+    const paid = searchParams.get("paid");
+    
+    if (paid === "true") {
+      toast({
+        title: "Thanh toán thành công!",
+        description: "Bạn đã mua khóa học thành công. Trang sẽ tự động cập nhật.",
+      });
+
+      // Xóa query param khỏi URL
+      navigate(`/course/${id}`, { replace: true });
+
+      // Refetch để cập nhật isPurchased
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    }
+  }, [searchParams, id, navigate, toast]);
 
   if (loading)
     return <p className="text-center py-10 text-lg">Loading course...</p>;

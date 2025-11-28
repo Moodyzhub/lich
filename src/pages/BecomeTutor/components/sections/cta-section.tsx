@@ -30,13 +30,13 @@ const CTASection = () => {
               className="text-4xl font-bold text-white mb-6"
               variants={fadeInUp}
           >
-            Ready to Start Teaching?
+            Sẵn sàng bắt đầu giảng dạy?
           </motion.h2>
           <motion.p
               className="text-xl text-blue-100 mb-8"
               variants={fadeInUp}
           >
-            Join our community of native speakers and start earning today
+            Tham gia cộng đồng người bản ngữ và bắt đầu kiếm tiền ngay hôm nay
           </motion.p>
           <motion.div variants={fadeInUp}>
             <Link to="/learner/apply-tutor">
@@ -45,7 +45,7 @@ const CTASection = () => {
                   whileHover={{scale: 1.05}}
                   whileTap={{scale: 0.95}}
               >
-                Apply to Become a Tutor
+                Đăng ký trở thành gia sư
               </motion.button>
             </Link>
           </motion.div>

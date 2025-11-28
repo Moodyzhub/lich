@@ -17,7 +17,7 @@ const Footer = () => {
               </div>
             </div>
             <p className="text-gray-300 mb-4">
-              Connecting language learners with native speakers worldwide. Master any language with personalized lessons.
+              Kết nối người học ngôn ngữ với người bản ngữ trên toàn thế giới. Thành thạo mọi ngôn ngữ với các bài học được cá nhân hóa.
             </p>
             <div className="flex space-x-4">
               <Facebook className="w-5 h-5 text-gray-400 hover:text-blue-400 cursor-pointer transition-colors" />
@@ -29,31 +29,31 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
+            <h3 className="text-lg font-semibold mb-4">Liên kết nhanh</h3>
             <ul className="space-y-2">
-              <li><a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">About Us</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">Find Tutors</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">Become a Tutor</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">Pricing</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">Contact</a></li>
+              <li><a href="/" className="text-gray-300 hover:text-blue-400 transition-colors">Trang chủ</a></li>
+              <li><a href="/tutors" className="text-gray-300 hover:text-blue-400 transition-colors">Tìm gia sư</a></li>
+              <li><a href="/languages" className="text-gray-300 hover:text-blue-400 transition-colors">Khóa học</a></li>
+              <li><a href="/apply-tutor" className="text-gray-300 hover:text-blue-400 transition-colors">Trở thành gia sư</a></li>
+              <li><a href="/policy" className="text-gray-300 hover:text-blue-400 transition-colors">Chính sách</a></li>
             </ul>
           </div>
 
           {/* Languages */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Popular Languages</h3>
+            <h3 className="text-lg font-semibold mb-4">Ngôn ngữ phổ biến</h3>
             <ul className="space-y-2">
-              <li><a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">English</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">Spanish</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">French</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">German</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">Chinese</a></li>
+              <li><a href="/languages" className="text-gray-300 hover:text-blue-400 transition-colors">Tiếng Anh</a></li>
+              <li><a href="/languages" className="text-gray-300 hover:text-blue-400 transition-colors">Tiếng Nhật</a></li>
+              <li><a href="/languages" className="text-gray-300 hover:text-blue-400 transition-colors">Tiếng Hàn</a></li>
+              <li><a href="/languages" className="text-gray-300 hover:text-blue-400 transition-colors">Tiếng Trung</a></li>
+              <li><a href="/languages" className="text-gray-300 hover:text-blue-400 transition-colors">Tiếng Pháp</a></li>
             </ul>
           </div>
 
           {/* Contact */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
+            <h3 className="text-lg font-semibold mb-4">Liên hệ với chúng tôi</h3>
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <Mail className="w-5 h-5 text-blue-400" />

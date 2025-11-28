@@ -1,7 +1,14 @@
-import axios, { InternalAxiosRequestConfig } from "axios";
+import axios, { InternalAxiosRequestConfig, AxiosRequestConfig } from "axios";
+
+// Custom config type with skipAuth option
+export interface CustomAxiosRequestConfig extends AxiosRequestConfig {
+    skipAuth?: boolean;
+}
 
 const api = axios.create({
-    baseURL: "http://localhost:8080",
+    baseURL: process.env.NODE_ENV === 'production'
+    ? 'https://centralized.henrytech.cloud'
+    : 'http://localhost:8086',
     withCredentials: true,
     headers: {
         "Content-Type": "application/json",
@@ -55,6 +62,12 @@ api.interceptors.response.use(
             return Promise.reject(error);
         }
 
+        // ---- Prevent retry for auth endpoints to avoid infinite loops ----
+        const url = originalRequest?.url || '';
+        if (url.includes('/auth/verify') || url.includes('/auth/refresh') || url.includes('/auth/login')) {
+            return Promise.reject(error);
+        }
+
         const refreshToken =
             localStorage.getItem("refresh_token") ||
             sessionStorage.getItem("refresh_token");
@@ -85,7 +98,7 @@ api.interceptors.response.use(
                 const res = await api.post(
                     "/auth/refresh",
                     { refreshToken },
-                    { skipAuth: true }
+                    { skipAuth: true } as CustomAxiosRequestConfig
                 );
 
                 const newAccess = res.data?.result?.accessToken;

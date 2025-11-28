@@ -34,9 +34,9 @@ const HeroSection = ({ itemCount, onSearch }: HeroSectionProps) => {
               animate="animate"
               variants={fadeInUp}
           >
-            <h1 className="text-4xl font-bold mb-4">My Wishlist</h1>
+            <h1 className="text-4xl font-bold mb-4">Danh sách yêu thích</h1>
             <p className="text-xl text-blue-100 mb-8">
-              All your favorite courses in one place
+              Tất cả các khóa học yêu thích của bạn ở một nơi
             </p>
 
             {/*  Tổng số khóa học */}
@@ -44,8 +44,8 @@ const HeroSection = ({ itemCount, onSearch }: HeroSectionProps) => {
               <Heart className="w-6 h-6 fill-red-400 text-red-400" />
               <span className="text-lg">
               {itemCount === 0
-                  ? "No items saved yet"
-                  : `${itemCount} ${itemCount === 1 ? "item" : "items"} saved`}
+                  ? "Chưa có khóa học nào được lưu"
+                  : `${itemCount} khóa học đã lưu`}
             </span>
             </div>
 
@@ -54,7 +54,7 @@ const HeroSection = ({ itemCount, onSearch }: HeroSectionProps) => {
               <div className="flex items-center bg-white rounded-full shadow-xl overflow-hidden">
                 <input
                     type="text"
-                    placeholder="Search your saved courses..."
+                    placeholder="Tìm kiếm khóa học đã lưu..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyDown={handleEnter}
@@ -65,7 +65,7 @@ const HeroSection = ({ itemCount, onSearch }: HeroSectionProps) => {
                     className="bg-yellow-400 text-blue-900 px-8 py-4 hover:bg-yellow-500 transition-colors flex items-center justify-center font-semibold"
                 >
                   <Search className="w-5 h-5 mr-2" />
-                  Search
+                  Tìm kiếm
                 </button>
               </div>
             </div>

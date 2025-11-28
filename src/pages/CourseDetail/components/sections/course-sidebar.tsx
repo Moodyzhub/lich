@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Star, Clock, BookOpen, Globe, Heart } from "lucide-react";
 import api from "@/config/axiosConfig";
 import { ROUTES } from "@/constants/routes";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { getUserId } from "@/lib/getUserId";
 
@@ -33,6 +33,7 @@ interface CourseSidebarProps {
         lessonID: number;
         title: string;
         duration: number;
+        orderIndex: number;
       }[];
     }[];
     contentSummary: {
@@ -48,39 +49,10 @@ interface CourseSidebarProps {
   setWishlisted: (value: boolean) => void;
 }
 
-interface TutorCourse {
-  id: number;
-}
-
 const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isOwner, setIsOwner] = useState(false);
-
-  /** ===============================
-   *  CHECK TUTOR OWNERSHIP
-   * =============================== */
-  useEffect(() => {
-    const token =
-        localStorage.getItem("access_token") ||
-        sessionStorage.getItem("access_token");
-
-    if (!token) return;
-
-    const checkTutorCourse = async () => {
-      try {
-        const res = await api.get("/tutor/courses/me");
-        const myCourses: TutorCourse[] = res.data.result || [];
-        if (myCourses.some((c) => c.id === course.id)) {
-          setIsOwner(true);
-        }
-      } catch {
-        //no
-      }
-    };
-
-    checkTutorCourse();
-  }, [course.id]);
+  // Removed tutor ownership check - all users must purchase courses
 
   /** ===============================
    *  AUTO-REMOVE WISHLIST IF PURCHASED
@@ -161,32 +133,71 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
     }
 
     try {
-      const res = await api.post("/api/payments/create", {
+      const response = await api.post("/api/payments/create", {
         userId,
         targetId: course.id,
         paymentType: "Course",
       });
 
-      if (wishlisted) {
-        await api.delete(`/wishlist/${course.id}`);
-        setWishlisted(false);
+      // Redirect to PayOS checkout URL
+      if (response.data?.checkoutUrl) {
+        window.location.href = response.data.checkoutUrl;
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Payment Error",
+          description: "Cannot get checkout URL",
+        });
       }
-
-      navigate(ROUTES.PAYMENT.replace(":id", `${course.id}`), {
-        state: { ...course, ...res.data },
-      });
     } catch {
       toast({
         variant: "destructive",
         title: "Payment failed",
+        description: "Failed to initialize payment.",
       });
     }
   };
 
   /** ===============================
+   *  GET FIRST LESSON ID
+   * =============================== */
+  const getFirstLessonId = () => {
+    if (!course.section || course.section.length === 0) return null;
+
+    const sortedSections = [...course.section].sort(
+        (a, b) => a.orderIndex - b.orderIndex
+    );
+
+    const firstSection = sortedSections[0];
+    if (!firstSection?.lessons || firstSection.lessons.length === 0) return null;
+
+    const sortedLessons = [...firstSection.lessons].sort(
+        (a, b) => a.orderIndex - b.orderIndex
+    );
+
+    return sortedLessons[0]?.lessonID || null;
+  };
+
+  /** ===============================
    *  GO TO COURSE
    * =============================== */
-  const handleGoToCourse = () => navigate(`/learning/${course.id}`);
+  const handleGoToCourse = () => {
+    const firstLessonId = getFirstLessonId();
+
+    if (!firstLessonId) {
+      toast({
+        title: "No lessons available",
+        description: "This course has no lessons yet.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    navigate(`/lesson/${firstLessonId}`, {
+      state: { courseId: course.id },
+    });
+  };
+
   const handleViewProfile = () =>
       navigate(ROUTES.TUTOR_DETAIL.replace(":id", `${course.tutorID}`));
 
@@ -212,7 +223,7 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
         >
-          <h3 className="text-xl font-bold text-gray-900 mb-4">Instructor</h3>
+          <h3 className="text-xl font-bold text-gray-900 mb-4">Giảng viên</h3>
 
           <div className="flex items-center space-x-4 mb-4">
             <img
@@ -238,25 +249,8 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
               onClick={handleViewProfile}
               className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
           >
-            View Profile
+            Xem hồ sơ
           </button>
-        </motion.div>
-
-        {/* ================= OBJECTIVES ================= */}
-        <motion.div
-            className="bg-white rounded-2xl p-6 shadow-lg"
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-        >
-          <h3 className="text-xl font-bold text-gray-900 mb-4">Objectives</h3>
-
-          <ul className="list-disc pl-5 space-y-2 text-gray-700">
-            {course.objectives?.map((o, i) => (
-                <li key={i}>{o}</li>
-            ))}
-          </ul>
         </motion.div>
 
         {/* ================= COURSE INFO ================= */}
@@ -268,22 +262,55 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
             transition={{ duration: 0.5 }}
         >
           <h3 className="text-xl font-bold text-gray-900 mb-4">
-            Course Information
+            Thông tin khóa học
           </h3>
 
           <div className="space-y-4">
+            {/* Content Summary - Udemy style */}
+            {course.contentSummary && (
+                <div className="pb-4 border-b border-gray-200">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Khóa học này bao gồm:</h4>
+                  <div className="space-y-2 text-sm">
+                    {course.contentSummary.totalVideoHours > 0 && (
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Clock className="w-4 h-4" />
+                          <span>{course.contentSummary.totalVideoHours} giờ video theo yêu cầu</span>
+                        </div>
+                    )}
+                    {course.contentSummary.totalPracticeTests > 0 && (
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <BookOpen className="w-4 h-4" />
+                          <span>{course.contentSummary.totalPracticeTests} bài kiểm tra thực hành</span>
+                        </div>
+                    )}
+                    {course.contentSummary.totalArticles > 0 && (
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <BookOpen className="w-4 h-4" />
+                          <span>{course.contentSummary.totalArticles} bài viết</span>
+                        </div>
+                    )}
+                    {course.contentSummary.totalDownloadableResources > 0 && (
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <BookOpen className="w-4 h-4" />
+                          <span>{course.contentSummary.totalDownloadableResources} tài nguyên có thể tải xuống</span>
+                        </div>
+                    )}
+                  </div>
+                </div>
+            )}
+
             <div className="flex justify-between">
               <div className="flex items-center space-x-2 text-gray-600">
                 <Clock className="w-5 h-5" />
-                <span>Duration</span>
+                <span>Thời lượng</span>
               </div>
-              <span className="font-semibold">{course.duration} hours</span>
+              <span className="font-semibold">{course.duration} giờ</span>
             </div>
 
             <div className="flex justify-between">
               <div className="flex items-center space-x-2 text-gray-600">
                 <BookOpen className="w-5 h-5" />
-                <span>Lessons</span>
+                <span>Bài học</span>
               </div>
               <span className="font-semibold">{totalLessons}</span>
             </div>
@@ -291,7 +318,7 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
             <div className="flex justify-between">
               <div className="flex items-center space-x-2 text-gray-600">
                 <Globe className="w-5 h-5" />
-                <span>Language</span>
+                <span>Ngôn ngữ</span>
               </div>
               <span className="font-semibold">{course.language}</span>
             </div>
@@ -313,13 +340,13 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
           </span>
           </div>
 
-          {/* If Owner OR Purchased → Go To Course */}
-          {isOwner || course.isPurchased ? (
+          {/* If Purchased → Go To Course */}
+          {course.isPurchased ? (
               <button
                   onClick={handleGoToCourse}
                   className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition mb-3"
               >
-                Go to Course
+                Vào học
               </button>
           ) : (
               <>
@@ -328,7 +355,7 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
                     onClick={handleBuyNow}
                     className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition mb-3"
                 >
-                  Buy Now
+                  Mua ngay
                 </button>
 
                 {/* Wishlist */}
@@ -341,7 +368,7 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
                           wishlisted ? "fill-blue-600 text-blue-600" : ""
                       }`}
                   />
-                  {wishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
+                  {wishlisted ? "Xóa khỏi yêu thích" : "Thêm vào yêu thích"}
                 </button>
               </>
           )}

@@ -112,37 +112,7 @@ export default function EditCourseStructure({
     new Map()
   );
 
-  // Debug logging
-  useEffect(() => {
-    console.log('=== EditCourseStructure DEBUG ===');
-    console.log('Course:', course);
-    console.log('Section data:', course.section);
-    console.log('Section length:', course.section?.length);
-    
-    if (course.section && course.section.length > 0) {
-      console.log('First section:', course.section[0]);
-      console.log('First section lessons:', course.section[0].lessons);
-      
-      if (course.section[0].lessons && course.section[0].lessons.length > 0) {
-        console.log('First lesson:', course.section[0].lessons[0]);
-        console.log('First lesson resources:', course.section[0].lessons[0].resources);
-        console.log('Resources length:', course.section[0].lessons[0].resources?.length);
-        
-        // Log all lessons with their resources
-        course.section.forEach((section, sIdx) => {
-          console.log(`\n=== Section ${sIdx}: ${section.title} ===`);
-          section.lessons?.forEach((lesson, lIdx) => {
-            console.log(`  Lesson ${lIdx}: ${lesson.title}`);
-            console.log(`    - Resources array exists: ${!!lesson.resources}`);
-            console.log(`    - Resources length: ${lesson.resources?.length || 0}`);
-            if (lesson.resources && lesson.resources.length > 0) {
-              console.log(`    - Resources:`, lesson.resources);
-            }
-          });
-        });
-      }
-    }
-  }, [course]);
+
 
   // Edit section dialog
   const [editingSectionIndex, setEditingSectionIndex] = useState<number | null>(
@@ -190,14 +160,7 @@ export default function EditCourseStructure({
     content: '',
   });
 
-  // Create resource state (for lesson creation)
-  const [showNewResourceDialog, setShowNewResourceDialog] = useState(false);
-  const [newResourceData, setNewResourceData] = useState<ResourceFormData>({
-    resourceType: 'PDF',
-    resourceTitle: '',
-    resourceURL: '',
-  });
-  const [lessonResources, setLessonResources] = useState<ResourceFormData[]>([]);
+  // Note: Resources are added separately after lesson creation, not during creation
 
   // Validation error states
   const [videoUrlError, setVideoUrlError] = useState<string>('');
@@ -250,23 +213,6 @@ export default function EditCourseStructure({
   };
 
   // Create lesson
-  // Add resource to lesson during creation
-  const addResourceToLesson = () => {
-    if (!newResourceData.resourceTitle.trim() || !newResourceData.resourceURL.trim()) {
-      alert('Please fill in resource title and URL');
-      return;
-    }
-
-    setLessonResources([...lessonResources, newResourceData]);
-    setNewResourceData({ resourceType: 'PDF', resourceTitle: '', resourceURL: '' });
-    setShowNewResourceDialog(false);
-  };
-
-  // Remove resource from lesson during creation
-  const removeResourceFromLesson = (index: number) => {
-    setLessonResources(lessonResources.filter((_, i) => i !== index));
-  };
-
   const createLesson = async () => {
     if (isCreatingLesson !== null && newLessonData && newLessonData.title.trim()) {
       // No need to validate here - button is already disabled if invalid
@@ -284,13 +230,7 @@ export default function EditCourseStructure({
           content: newLessonData.content,
           orderIndex: lessonCount,
           createdAt: new Date().toISOString(),
-          resources: lessonResources.map((res) => ({
-            resourceID: Math.floor(Math.random() * 10000),
-            resourceType: res.resourceType,
-            resourceTitle: res.resourceTitle,
-            resourceURL: res.resourceURL,
-            uploadedAt: new Date().toISOString(),
-          })),
+          resources: [], // Resources will be added separately after lesson creation
         };
 
         onCreateLesson(isCreatingLesson, newLesson);
@@ -302,8 +242,6 @@ export default function EditCourseStructure({
           videoURL: '',
           content: '',
         });
-        setLessonResources([]);
-        setShowNewResourceDialog(false);
       } catch (error) {
         console.error('Error creating lesson:', error);
         alert('Failed to create lesson');
@@ -591,10 +529,10 @@ export default function EditCourseStructure({
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">
-              Course Content
+              Nội dung khóa học
             </h2>
             <p className="text-gray-600 mt-1">
-              Manage sections, lessons, and resources for your course
+              Quản lý các chương, bài học và tài nguyên cho khóa học của bạn
             </p>
           </div>
           <Button
@@ -602,7 +540,7 @@ export default function EditCourseStructure({
             className="gap-2 bg-blue-600 hover:bg-blue-700"
           >
             <Plus className="w-4 h-4" />
-            Add Section
+            Thêm chương
           </Button>
         </div>
 
@@ -624,10 +562,10 @@ export default function EditCourseStructure({
                   )}
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-gray-900 truncate">
-                      Section {sectionIndex + 1}: {section.title}
+                      Chương {sectionIndex + 1}: {section.title}
                     </h3>
                     <p className="text-sm text-gray-600 mt-1">
-                      {section.lessons?.length || 0} lessons
+                      {section.lessons?.length || 0} bài học
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -688,14 +626,13 @@ export default function EditCourseStructure({
                                   {lesson.title}
                                 </p>
                                 <p className="text-xs text-gray-500 mt-1">
-                                  {lesson.duration} minutes •{' '}
+                                  {lesson.duration} phút •{' '}
                                   {lesson.lessonType}
                                 </p>
                               </div>
                               <div className="flex gap-2">
                                 <Button
-                                  size="sm"
-                                  variant="outline"
+                                  variant="ghost"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     openEditLesson(sectionIndex, lessonIndex);
@@ -704,8 +641,7 @@ export default function EditCourseStructure({
                                   <Edit2 className="w-4 h-4" />
                                 </Button>
                                 <Button
-                                  size="sm"
-                                  variant="destructive"
+                                  variant="ghost"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setDeleteConfirm({
@@ -714,6 +650,7 @@ export default function EditCourseStructure({
                                       lessonIndex,
                                     });
                                   }}
+                                  className="text-red-500 hover:text-red-700"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
@@ -725,17 +662,7 @@ export default function EditCourseStructure({
                               `${sectionIndex}-${lessonIndex}`
                             ) && (
                               <div className="mt-4 space-y-3 pl-7 border-l-2 border-gray-200">
-                                {/* Lesson Content */}
-                                <div>
-                                  <p className="text-xs font-semibold text-gray-600 uppercase">
-                                    Lesson Content
-                                  </p>
-                                  <p className="text-sm text-gray-700 mt-1">
-                                    {lesson.content || 'No content'}
-                                  </p>
-                                </div>
-
-                                {lesson.videoURL && (
+                                {lesson.lessonType === 'Video' && lesson.videoURL && (
                                   <div>
                                     <p className="text-xs font-semibold text-gray-600 uppercase">
                                       Video
@@ -747,91 +674,94 @@ export default function EditCourseStructure({
                                       className="text-sm text-blue-600 hover:underline mt-1 flex items-center gap-2"
                                     >
                                       <Link2 className="w-3 h-3" />
-                                      Watch Video
+                                      Xem video
                                     </a>
                                   </div>
                                 )}
 
                                 {/* Resources */}
-                                {lesson.resources &&
-                                  lesson.resources.length > 0 && (
-                                    <div>
-                                      <p className="text-xs font-semibold text-gray-600 uppercase mb-2">
-                                        Resources ({lesson.resources.length})
-                                      </p>
-                                      <div className="space-y-2">
-                                        {lesson.resources.map(
-                                          (resource, resourceIndex) => (
-                                            <div
-                                              key={resource.resourceID}
-                                              className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200"
-                                            >
-                                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                                <FileText className="w-4 h-4 text-orange-500 flex-shrink-0" />
-                                                <div className="min-w-0">
-                                                  <p className="text-sm font-medium text-gray-900 truncate">
-                                                    {resource.resourceTitle}
-                                                  </p>
-                                                  <p className="text-xs text-gray-500">
-                                                    {resource.resourceType}
-                                                  </p>
-                                                </div>
-                                              </div>
-                                              <div className="flex gap-2 flex-shrink-0">
-                                                <Button
-                                                  size="sm"
-                                                  variant="outline"
-                                                  onClick={() =>
-                                                    openEditResource(
-                                                      sectionIndex,
-                                                      lessonIndex,
-                                                      resourceIndex
-                                                    )
-                                                  }
-                                                >
-                                                  <Edit2 className="w-3 h-3" />
-                                                </Button>
-                                                <Button
-                                                  size="sm"
-                                                  variant="destructive"
-                                                  onClick={() =>
-                                                    setDeleteConfirm({
-                                                      type: 'resource',
-                                                      sectionIndex,
-                                                      lessonIndex,
-                                                      resourceIndex,
-                                                    })
-                                                  }
-                                                >
-                                                  <Trash2 className="w-3 h-3" />
-                                                </Button>
+                                <div>
+                                  <div className="flex items-center justify-between mb-2">
+                                    <p className="text-xs font-semibold text-gray-600 uppercase">
+                                      Tài nguyên ({lesson.resources?.length || 0})
+                                    </p>
+                                  </div>
+                                  {lesson.resources && lesson.resources.length > 0 && (
+                                    <div className="space-y-2 mb-2">
+                                      {lesson.resources.map(
+                                        (resource, resourceIndex) => (
+                                          <div
+                                            key={resource.resourceID}
+                                            className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200"
+                                          >
+                                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                                              <FileText className="w-4 h-4 text-orange-500 flex-shrink-0" />
+                                              <div className="min-w-0">
+                                                <p className="text-sm font-medium text-gray-900 truncate">
+                                                  {resource.resourceTitle}
+                                                </p>
+                                                <p className="text-xs text-gray-500">
+                                                  {resource.resourceType}
+                                                </p>
                                               </div>
                                             </div>
-                                          )
-                                        )}
-                                      </div>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() =>
-                                          setIsCreatingResource(
-                                            `${sectionIndex}-${lessonIndex}`
-                                          )
-                                        }
-                                        className="w-full mt-2 gap-2"
-                                      >
-                                        <Plus className="w-3 h-3" />
-                                        Add Resource
-                                      </Button>
+                                            <div className="flex gap-1 flex-shrink-0">
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() =>
+                                                  openEditResource(
+                                                    sectionIndex,
+                                                    lessonIndex,
+                                                    resourceIndex
+                                                  )
+                                                }
+                                                className="h-8 w-8 p-0"
+                                              >
+                                                <Edit2 className="w-3 h-3" />
+                                              </Button>
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() =>
+                                                  setDeleteConfirm({
+                                                    type: 'resource',
+                                                    sectionIndex,
+                                                    lessonIndex,
+                                                    resourceIndex,
+                                                  })
+                                                }
+                                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                              >
+                                                <Trash2 className="w-3 h-3" />
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        )
+                                      )}
                                     </div>
                                   )}
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      setIsCreatingResource(
+                                        `${sectionIndex}-${lessonIndex}`
+                                      )
+                                    }
+                                    className="w-full gap-2 border-dashed"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                    Thêm tài nguyên
+                                  </Button>
+                                </div>
                               </div>
                             )}
                           </div>
                         ))
                       ) : (
                         <div className="p-4 text-center text-gray-500">
-                          This Section has no lessons yet
+                          Chương này chưa có bài học nào
                         </div>
                       )}
                     </div>
@@ -843,13 +773,12 @@ export default function EditCourseStructure({
                         variant="outline"
                         onClick={() => {
                           setIsCreatingLesson(sectionIndex);
-                          // Set initial validation error for empty video URL (required for video lessons)
-                          setVideoUrlError('Video URL is required');
+                          setVideoUrlError('');
                         }}
                         className="w-full gap-2"
                       >
                         <Plus className="w-4 h-4" />
-                        Add Lesson
+                        Thêm bài học
                       </Button>
                     </div>
                   </CardContent>
@@ -858,7 +787,7 @@ export default function EditCourseStructure({
             ))
           ) : (
             <Card className="p-8 text-center text-gray-500">
-              <p>Course has no Sections yet</p>
+              <p>Khóa học chưa có chương nào</p>
             </Card>
           )}
         </div>
@@ -870,7 +799,7 @@ export default function EditCourseStructure({
             onClick={onBack}
             disabled={isSubmitting}
           >
-            Back
+            Quay lại
           </Button>
           <Button
             onClick={onSubmit}
@@ -880,12 +809,12 @@ export default function EditCourseStructure({
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Submitting...
+                Đang gửi...
               </>
             ) : (
               <>
                 <CheckCircle2 className="w-4 h-4" />
-                Submit
+                Gửi
               </>
             )}
           </Button>
@@ -904,14 +833,14 @@ export default function EditCourseStructure({
       >
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Edit Section</DialogTitle>
+            <DialogTitle>Chỉnh sửa chương</DialogTitle>
           </DialogHeader>
 
           {editingSectionData && (
             <div className="space-y-4">
               <div>
                 <Label htmlFor="section-title" className="text-base">
-                  Section Title
+                  Tiêu đề chương
                 </Label>
                 <Input
                   id="section-title"
@@ -927,7 +856,7 @@ export default function EditCourseStructure({
               </div>
               <div>
                 <Label htmlFor="section-description" className="text-base">
-                  Section Description
+                  Mô tả chương
                 </Label>
                 <Textarea
                   id="section-description"
@@ -954,10 +883,10 @@ export default function EditCourseStructure({
               }}
               disabled={isSaving}
             >
-              Cancel
+              Hủy
             </Button>
             <Button onClick={saveSection} disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Save'}
+              {isSaving ? 'Đang lưu...' : 'Lưu'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -975,14 +904,14 @@ export default function EditCourseStructure({
       >
         <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Lesson</DialogTitle>
+            <DialogTitle>Chỉnh sửa bài học</DialogTitle>
           </DialogHeader>
 
           {editingLessonData && (
             <div className="space-y-4">
               <div>
                 <Label htmlFor="lesson-title" className="text-base">
-                  Lesson Title
+                  Tiêu đề bài học
                 </Label>
                 <Input
                   id="lesson-title"
@@ -1000,7 +929,7 @@ export default function EditCourseStructure({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label htmlFor="lesson-duration" className="text-sm">
-                    Duration (minutes)
+                    Thời lượng (phút)
                   </Label>
                   <Input
                     id="lesson-duration"
@@ -1019,7 +948,7 @@ export default function EditCourseStructure({
 
                 <div>
                   <Label htmlFor="lesson-type" className="text-sm">
-                    Lesson Type
+                    Loại bài học
                   </Label>
                   <Select
                     value={editingLessonData.lessonType}
@@ -1036,11 +965,11 @@ export default function EditCourseStructure({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Video">Video</SelectItem>
-                      <SelectItem value="Reading">Reading</SelectItem>
+                      <SelectItem value="Reading">Đọc</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-gray-500 mt-1">
-                    Lesson type cannot be changed after creation
+                    Không thể thay đổi loại bài học sau khi tạo
                   </p>
                 </div>
               </div>
@@ -1078,7 +1007,7 @@ export default function EditCourseStructure({
               {editingLessonData.lessonType === 'Reading' && (
                 <div>
                   <Label htmlFor="lesson-content" className="text-base">
-                    Lesson Content
+                    Nội dung bài học
                   </Label>
                   <RichTextEditor
                     value={editingLessonData.content}
@@ -1088,72 +1017,11 @@ export default function EditCourseStructure({
                         content: value,
                       })
                     }
-                    placeholder="Enter your lesson content here. You can format text, add images, videos, and more..."
+                    placeholder="Nhập nội dung bài học tại đây. Bạn có thể định dạng văn bản, thêm hình ảnh, video và nhiều hơn nữa..."
                     disabled={isSaving}
                   />
                 </div>
               )}
-
-              {/* Resources Section */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <Label className="text-base">
-                    Resources ({editLessonResources.length})
-                  </Label>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setEditResourceData({ resourceType: 'PDF', resourceTitle: '', resourceURL: '' });
-                      setEditingResourceIndex(null);
-                      // Set initial validation error for empty URL
-                      setEditResourceUrlError('Resource URL is required');
-                      setShowEditResourceDialog(true);
-                    }}
-                    className="gap-2"
-                  >
-                    <Plus className="w-3 h-3" />
-                    Add Resource
-                  </Button>
-                </div>
-
-                {editLessonResources.length > 0 && (
-                  <div className="space-y-2 mb-3">
-                    {editLessonResources.map((resource, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200"
-                      >
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900">
-                            {resource.resourceTitle}
-                          </p>
-                          <p className="text-xs text-gray-500">{resource.resourceType}</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => startEditingEditLessonResource(index)}
-                          >
-                            <Edit2 className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => removeResourceFromEditLesson(index)}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
           )}
 
@@ -1167,7 +1035,7 @@ export default function EditCourseStructure({
               }}
               disabled={isSaving}
             >
-              Cancel
+              Hủy
             </Button>
             <Button 
               onClick={saveLesson} 
@@ -1179,7 +1047,7 @@ export default function EditCourseStructure({
                 (editingLessonData?.lessonType === 'Reading' && !editingLessonData?.content?.trim())
               }
             >
-              {isSaving ? 'Saving...' : 'Save'}
+              {isSaving ? 'Đang lưu...' : 'Lưu'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1190,12 +1058,12 @@ export default function EditCourseStructure({
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>
-              {editingResourceIndex !== null ? 'Edit Resource' : 'Add Resource'}
+              {editingResourceIndex !== null ? 'Chỉnh sửa tài nguyên' : 'Thêm tài nguyên'}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="edit-lesson-resource-type">Resource Type</Label>
+              <Label htmlFor="edit-lesson-resource-type">Loại tài nguyên</Label>
               <Select
                 value={editResourceData.resourceType}
                 onValueChange={(value) =>
@@ -1210,12 +1078,12 @@ export default function EditCourseStructure({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="PDF">PDF</SelectItem>
-                  <SelectItem value="ExternalLink">External Link</SelectItem>
+                  <SelectItem value="ExternalLink">Liên kết ngoài</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label htmlFor="edit-lesson-resource-title">Resource Name</Label>
+              <Label htmlFor="edit-lesson-resource-title">Tên tài nguyên</Label>
               <Input
                 id="edit-lesson-resource-title"
                 value={editResourceData.resourceTitle}
@@ -1226,11 +1094,11 @@ export default function EditCourseStructure({
                   })
                 }
                 disabled={isSaving}
-                placeholder="e.g., Grammar Guide"
+                placeholder="VD: Hướng dẫn ngữ pháp"
               />
             </div>
             <div>
-              <Label htmlFor="edit-lesson-resource-url">Resource URL</Label>
+              <Label htmlFor="edit-lesson-resource-url">URL tài nguyên</Label>
               <Input
                 id="edit-lesson-resource-url"
                 value={editResourceData.resourceURL}
@@ -1265,7 +1133,7 @@ export default function EditCourseStructure({
               }}
               disabled={isSaving}
             >
-              Cancel
+              Hủy
             </Button>
             <Button
               onClick={
@@ -1280,7 +1148,7 @@ export default function EditCourseStructure({
                 !!editResourceUrlError
               }
             >
-              {editingResourceIndex !== null ? 'Update' : 'Add'}
+              {editingResourceIndex !== null ? 'Cập nhật' : 'Thêm'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1440,12 +1308,12 @@ export default function EditCourseStructure({
       >
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Create New Section</DialogTitle>
+            <DialogTitle>Tạo chương mới</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
               <Label htmlFor="new-section-title" className="text-base">
-                Section Title
+                Tên chương
               </Label>
               <Input
                 id="new-section-title"
@@ -1457,11 +1325,12 @@ export default function EditCourseStructure({
                   })
                 }
                 disabled={isSaving}
+                placeholder="VD: Giới thiệu về ngữ pháp"
               />
             </div>
             <div>
               <Label htmlFor="new-section-description" className="text-base">
-                Section Description
+                Mô tả chương
               </Label>
               <Textarea
                 id="new-section-description"
@@ -1474,6 +1343,7 @@ export default function EditCourseStructure({
                 }
                 disabled={isSaving}
                 rows={3}
+                placeholder="Mô tả ngắn gọn về nội dung chương này..."
               />
             </div>
           </div>
@@ -1483,10 +1353,10 @@ export default function EditCourseStructure({
               onClick={() => setIsCreatingSection(false)}
               disabled={isSaving}
             >
-              Cancel
+              Hủy
             </Button>
             <Button onClick={createSection} disabled={isSaving}>
-              {isSaving ? 'Creating...' : 'Create'}
+              {isSaving ? 'Đang tạo...' : 'Tạo'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1501,12 +1371,12 @@ export default function EditCourseStructure({
       >
         <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Create New Lesson</DialogTitle>
+            <DialogTitle>Tạo bài học mới</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
               <Label htmlFor="new-lesson-title" className="text-base">
-                Lesson Title
+                Tên bài học
               </Label>
               <Input
                 id="new-lesson-title"
@@ -1518,12 +1388,13 @@ export default function EditCourseStructure({
                   })
                 }
                 disabled={isSaving}
+                placeholder="VD: Giới thiệu về ngữ pháp cơ bản"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="new-lesson-duration" className="text-sm">
-                  Duration (minutes)
+                  Thời lượng (phút)
                 </Label>
                 <Input
                   id="new-lesson-duration"
@@ -1541,23 +1412,27 @@ export default function EditCourseStructure({
               </div>
               <div>
                 <Label htmlFor="new-lesson-type" className="text-sm">
-                  Lesson Type
+                  Loại bài học
                 </Label>
                 <Select
                   value={newLessonData.lessonType}
-                  onValueChange={(value) =>
+                  onValueChange={(value) => {
                     setNewLessonData({
                       ...newLessonData,
                       lessonType: value as 'Video' | 'Reading',
-                    })
-                  }
+                    });
+                    // Clear video URL error when switching lesson type
+                    if (value === 'Reading') {
+                      setVideoUrlError('');
+                    }
+                  }}
                 >
                   <SelectTrigger disabled={isSaving}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Video">Video</SelectItem>
-                    <SelectItem value="Reading">Reading</SelectItem>
+                    <SelectItem value="Reading">Đọc</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1565,7 +1440,7 @@ export default function EditCourseStructure({
             {newLessonData.lessonType === 'Video' && (
               <div>
                 <Label htmlFor="new-lesson-video" className="text-base">
-                  Video URL
+                  URL Video
                 </Label>
                 <Input
                   id="new-lesson-video"
@@ -1576,12 +1451,21 @@ export default function EditCourseStructure({
                       ...newLessonData,
                       videoURL: url,
                     });
-                    // Validate URL on change (required for video lessons)
-                    setVideoUrlError(getYouTubeUrlErrorMessage(url, true));
+                    // Only validate if user has typed something
+                    if (url.trim()) {
+                      setVideoUrlError(getYouTubeUrlErrorMessage(url, false));
+                    } else {
+                      setVideoUrlError('');
+                    }
                   }}
                   onBlur={(e) => {
-                    // Re-validate on blur to ensure required check
-                    setVideoUrlError(getYouTubeUrlErrorMessage(e.target.value, true));
+                    // Only show required error on blur if field is empty
+                    const url = e.target.value;
+                    if (!url.trim()) {
+                      setVideoUrlError('');
+                    } else {
+                      setVideoUrlError(getYouTubeUrlErrorMessage(url, false));
+                    }
                   }}
                   disabled={isSaving}
                   placeholder="https://www.youtube.com/watch?v=..."
@@ -1595,7 +1479,7 @@ export default function EditCourseStructure({
             {newLessonData.lessonType === 'Reading' && (
               <div>
                 <Label htmlFor="new-lesson-content" className="text-base">
-                  Lesson Content
+                  Nội dung bài học
                 </Label>
                 <RichTextEditor
                   value={newLessonData.content}
@@ -1605,180 +1489,46 @@ export default function EditCourseStructure({
                       content: value,
                     })
                   }
-                  placeholder="Enter your lesson content here. You can format text, add images, videos, and more..."
+                  placeholder="Nhập nội dung bài học tại đây. Bạn có thể định dạng văn bản, thêm hình ảnh, video và nhiều hơn nữa..."
                   disabled={isSaving}
                 />
               </div>
             )}
-
-            {/* Resources Section */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <Label className="text-base">
-                  Resources ({lessonResources.length})
-                </Label>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    // Set initial validation errors for empty fields
-                    setResourceUrlError('Resource URL is required');
-                    setShowNewResourceDialog(true);
-                  }}
-                  className="gap-2"
-                >
-                  <Plus className="w-3 h-3" />
-                  Add Resource
-                </Button>
-              </div>
-
-              {lessonResources.length > 0 && (
-                <div className="space-y-2 mb-3">
-                  {lessonResources.map((resource, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200"
-                    >
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">
-                          {resource.resourceTitle}
-                        </p>
-                        <p className="text-xs text-gray-500">{resource.resourceType}</p>
-                      </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => removeResourceFromLesson(index)}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
           <DialogFooter>
             <Button
               variant="outline"
               onClick={() => {
                 setIsCreatingLesson(null);
-                setLessonResources([]);
-                setShowNewResourceDialog(false);
+                setVideoUrlError('');
               }}
               disabled={isSaving}
             >
-              Cancel
+              Hủy
             </Button>
             <Button 
-              onClick={createLesson} 
+              onClick={() => {
+                // Validate before creating
+                if (newLessonData.lessonType === 'Video' && !newLessonData.videoURL?.trim()) {
+                  setVideoUrlError('URL video là bắt buộc');
+                  return;
+                }
+                createLesson();
+              }} 
               disabled={
                 isSaving || 
                 !newLessonData.title.trim() ||
                 newLessonData.duration <= 0 ||
-                (newLessonData.lessonType === 'Video' && (!!videoUrlError || !newLessonData.videoURL?.trim())) ||
+                (newLessonData.lessonType === 'Video' && !!videoUrlError) ||
                 (newLessonData.lessonType === 'Reading' && !newLessonData.content?.trim())
               }
             >
-              {isSaving ? 'Creating...' : 'Create'}
+              {isSaving ? 'Đang tạo...' : 'Tạo'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Add Resource to Lesson Dialog (during lesson creation) */}
-      <Dialog open={showNewResourceDialog} onOpenChange={setShowNewResourceDialog}>
-        <DialogContent className="sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Add Resource</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="lesson-resource-type">Resource Type</Label>
-              <Select
-                value={newResourceData.resourceType}
-                onValueChange={(value) =>
-                  setNewResourceData({
-                    ...newResourceData,
-                    resourceType: value as 'PDF' | 'ExternalLink',
-                  })
-                }
-              >
-                <SelectTrigger disabled={isSaving}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="PDF">PDF</SelectItem>
-                  <SelectItem value="ExternalLink">External Link</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="lesson-resource-title">Resource Name</Label>
-              <Input
-                id="lesson-resource-title"
-                value={newResourceData.resourceTitle}
-                onChange={(e) =>
-                  setNewResourceData({
-                    ...newResourceData,
-                    resourceTitle: e.target.value,
-                  })
-                }
-                disabled={isSaving}
-                placeholder="e.g., Grammar Guide"
-              />
-            </div>
-            <div>
-              <Label htmlFor="lesson-resource-url">Resource URL</Label>
-              <Input
-                id="lesson-resource-url"
-                value={newResourceData.resourceURL}
-                onChange={(e) => {
-                  const newValue = e.target.value;
-                  setNewResourceData({
-                    ...newResourceData,
-                    resourceURL: newValue,
-                  });
-                  // Validate resource URL
-                  setResourceUrlError(getResourceUrlErrorMessage(newValue, true));
-                }}
-                onBlur={(e) => {
-                  // Re-validate on blur
-                  setResourceUrlError(getResourceUrlErrorMessage(e.target.value, true));
-                }}
-                disabled={isSaving}
-                placeholder="https://example.com/resource"
-                className={resourceUrlError ? 'border-red-500' : ''}
-              />
-              {resourceUrlError && (
-                <p className="text-sm text-red-600 mt-1">{resourceUrlError}</p>
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowNewResourceDialog(false)}
-              disabled={isSaving}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={addResourceToLesson}
-              disabled={
-                isSaving ||
-                !newResourceData.resourceTitle.trim() ||
-                !newResourceData.resourceURL.trim() ||
-                !!resourceUrlError
-              }
-            >
-              Add
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
       {/* Create Resource Dialog (Standalone) */}
       <Dialog
         open={isCreatingResource !== null}
@@ -1788,12 +1538,12 @@ export default function EditCourseStructure({
       >
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
-            <DialogTitle>Create New Resource</DialogTitle>
+            <DialogTitle>Tạo tài nguyên mới</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
               <Label htmlFor="new-resource-type" className="text-base">
-                Resource Type
+                Loại tài nguyên
               </Label>
               <Select
                 value={standaloneResourceData.resourceType}
@@ -1809,13 +1559,13 @@ export default function EditCourseStructure({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="PDF">PDF</SelectItem>
-                  <SelectItem value="ExternalLink">External Link</SelectItem>
+                  <SelectItem value="ExternalLink">Liên kết ngoài</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
               <Label htmlFor="new-resource-title" className="text-base">
-                Resource Name
+                Tên tài nguyên
               </Label>
               <Input
                 id="new-resource-title"
@@ -1827,11 +1577,12 @@ export default function EditCourseStructure({
                   })
                 }
                 disabled={isSaving}
+                placeholder="VD: Tài liệu ngữ pháp"
               />
             </div>
             <div>
               <Label htmlFor="new-resource-url" className="text-base">
-                Resource URL
+                URL tài nguyên
               </Label>
               <Input
                 id="new-resource-url"
@@ -1853,10 +1604,10 @@ export default function EditCourseStructure({
               onClick={() => setIsCreatingResource(null)}
               disabled={isSaving}
             >
-              Cancel
+              Hủy
             </Button>
             <Button onClick={createResource} disabled={isSaving}>
-              {isSaving ? 'Creating...' : 'Create'}
+              {isSaving ? 'Đang tạo...' : 'Tạo'}
             </Button>
           </DialogFooter>
         </DialogContent>

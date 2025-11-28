@@ -2,26 +2,22 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
     Bell, Menu, X, Languages, Heart, User, LogOut,
-     Settings, GraduationCap, CreditCard, Lock, LayoutDashboard,MessageCircle
+    Settings, GraduationCap, CreditCard, Lock, LayoutDashboard, MessageCircle, DollarSign, Calendar
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { SafeAvatar } from "@/components/ui/safe-avatar";
 import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem,
     DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/constants/routes";
-import api from "@/config/axiosConfig";
 import { useToast } from "@/components/ui/use-toast";
-//  Chuẩn hoá kiểu dữ liệu người dùng
-interface User {
-    fullName: string;
-    email: string;
-    avatarURL?: string;
-    role: "Admin" | "Tutor" | "Learner";
-}
+import { useNotifications } from "@/hooks/useNotifications";
+import { Badge } from "@/components/ui/badge";
+import { formatDistanceToNow } from "date-fns";
+import { useUser } from "@/contexts/UserContext";
 
 const Header = () => {
     const location = useLocation();
@@ -30,32 +26,31 @@ const Header = () => {
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+    const { user, setUser, refreshUser, loading } = useUser();
+
     const token =
         localStorage.getItem("access_token") ||
         sessionStorage.getItem("access_token");
 
     const isAuthenticated = !!token;
-    const [user, setUser] = useState<User | null>(null);
 
-    // === Fetch user info sau khi đăng nhập ===
-    useEffect(() => {
-        if (!isAuthenticated) return;
 
-        api
-            .get("/users/myInfo")
-            .then((res) => setUser(res.data.result as User))
-            .catch(() => {
-                localStorage.removeItem("access_token");
-                sessionStorage.removeItem("access_token");
-                navigate(ROUTES.SIGN_IN);
-            });
-    }, [isAuthenticated, navigate]);
+
+    const { recentNotifications, unreadCount, markAsRead } = useNotifications();
 
     // === Logout ===
     const handleLogout = () => {
+        // Clear all tokens
         localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
         sessionStorage.removeItem("access_token");
-        navigate(ROUTES.SIGN_IN, { replace: true });
+        sessionStorage.removeItem("refresh_token");
+        
+        // Clear user state
+        setUser(null);
+        
+        // Redirect to sign in page with full reload to clear all state
+        window.location.href = ROUTES.SIGN_IN;
     };
 
     const getUserInitial = (fullName: string) => {
@@ -65,6 +60,17 @@ const Header = () => {
 
     const isTutorPage = /^\/tutor(\/|$)/.test(location.pathname);
     const isActive = (path: string) => location.pathname === path;
+
+    // Refresh user when coming back from profile page
+    useEffect(() => {
+        if (isAuthenticated && location.pathname !== ROUTES.PROFILE) {
+            // Small delay to ensure profile updates are saved
+            const timer = setTimeout(() => {
+                refreshUser();
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [location.pathname]);
 
     return (
         <header className="bg-background border-b border-border sticky top-0 z-50 shadow-sm">
@@ -97,7 +103,7 @@ const Header = () => {
                                             : "text-muted-foreground hover:text-primary"
                                     )}
                                 >
-                                    Home
+                                    Trang chủ
                                 </Link>
                                 <Link
                                     to={ROUTES.LANGUAGES}
@@ -108,7 +114,7 @@ const Header = () => {
                                             : "text-muted-foreground hover:text-primary"
                                     )}
                                 >
-                                    Languages
+                                    Ngôn ngữ
                                 </Link>
                                 <Link
                                     to={ROUTES.TUTORS}
@@ -119,7 +125,7 @@ const Header = () => {
                                             : "text-muted-foreground hover:text-primary"
                                     )}
                                 >
-                                    Tutors
+                                    Gia sư
                                 </Link>
                                 <Link
                                     to={ROUTES.BECOME_TUTOR}
@@ -130,7 +136,7 @@ const Header = () => {
                                             : "text-muted-foreground hover:text-primary"
                                     )}
                                 >
-                                    Become Tutor
+                                    Trở thành gia sư
                                 </Link>
                             </div>
 
@@ -144,7 +150,7 @@ const Header = () => {
                                             : "text-muted-foreground hover:text-primary"
                                     )}
                                 >
-                                    Privacy & Terms
+                                    Chính sách & Điều khoản
                                 </Link>
                             </div>
                         </nav>
@@ -163,8 +169,8 @@ const Header = () => {
 
                                     toast({
                                         variant: "destructive",
-                                        title: "You are not logged in",
-                                        description: "Please login to view your wishlist.",
+                                        title: "Bạn chưa đăng nhập",
+                                        description: "Vui lòng đăng nhập để xem danh sách yêu thích.",
                                     });
                                     return;
                                 }
@@ -185,8 +191,8 @@ const Header = () => {
 
                                     toast({
                                         variant: "destructive",
-                                        title: "You are not logged in",
-                                        description: "Please login to view notifications.",
+                                        title: "Bạn chưa đăng nhập",
+                                        description: "Vui lòng đăng nhập để xem thông báo.",
                                     });
                                     return;
                                 }
@@ -197,6 +203,7 @@ const Header = () => {
                                 <Button
                                     variant="ghost"
                                     size="icon"
+                                    className="relative"
                                     onClick={() => {
                                         if (!isAuthenticated) {
                                             toast({
@@ -208,33 +215,105 @@ const Header = () => {
                                     }}
                                 >
                                     <Bell className="w-5 h-5" />
+                                    {isAuthenticated && unreadCount > 0 && (
+                                        <Badge 
+                                            variant="destructive" 
+                                            className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                                        >
+                                            {unreadCount > 9 ? '9+' : unreadCount}
+                                        </Badge>
+                                    )}
                                 </Button>
                             </DropdownMenuTrigger>
 
                             {isAuthenticated && (
-                                <DropdownMenuContent align="end" className="w-72">
-                                    <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+                                <DropdownMenuContent align="end" className="w-80">
+                                    <DropdownMenuLabel className="flex items-center justify-between">
+                                        <span>Thông báo</span>
+                                        {unreadCount > 0 && (
+                                            <Badge variant="secondary" className="ml-2">
+                                                {unreadCount} mới
+                                            </Badge>
+                                        )}
+                                    </DropdownMenuLabel>
                                     <DropdownMenuSeparator />
-                                    <div className="px-4 py-6 text-sm text-muted-foreground text-center">
-                                        No notifications
-                                    </div>
+                                    
+                                    {recentNotifications.length === 0 ? (
+                                        <div className="px-4 py-6 text-sm text-muted-foreground text-center">
+                                            Không có thông báo
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="max-h-[400px] overflow-y-auto">
+                                                {recentNotifications.map((notification) => (
+                                                    <DropdownMenuItem
+                                                        key={notification.notificationId}
+                                                        className={cn(
+                                                            "flex flex-col items-start gap-1 p-3 cursor-pointer",
+                                                            !notification.isRead && "bg-blue-50/50"
+                                                        )}
+                                                        onClick={async () => {
+                                                            // Mark as read
+                                                            if (!notification.isRead) {
+                                                                await markAsRead(notification.notificationId);
+                                                            }
+                                                            
+                                                            // Navigate to URL
+                                                            if (notification.primaryActionUrl) {
+                                                                navigate(notification.primaryActionUrl);
+                                                            }
+                                                            setNotificationsOpen(false);
+                                                        }}
+                                                    >
+                                                        <div className="flex items-start justify-between w-full gap-2">
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="font-medium text-sm truncate">
+                                                                    {notification.title}
+                                                                </p>
+                                                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2 break-words">
+                                                                    {notification.content}
+                                                                </p>
+                                                                <p className="text-xs text-muted-foreground mt-1">
+                                                                    {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                                                                </p>
+                                                            </div>
+                                                            {!notification.isRead && (
+                                                                <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-1" />
+                                                            )}
+                                                        </div>
+                                                    </DropdownMenuItem>
+                                                ))}
+                                            </div>
+                                            
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem
+                                                className="justify-center text-primary font-medium cursor-pointer"
+                                                onClick={() => {
+                                                    navigate(ROUTES.NOTIFICATIONS);
+                                                    setNotificationsOpen(false);
+                                                }}
+                                            >
+                                                Tất cả thông báo
+                                            </DropdownMenuItem>
+                                        </>
+                                    )}
                                 </DropdownMenuContent>
                             )}
                         </DropdownMenu>
                         {/* ROLE BADGE */}
                         {isAuthenticated && user?.role === "Tutor" && (
-                            <div className="px-3 py-1 text-sm font-semibold bg-purple-100 text-purple-700 rounded-full">
-                                Tutor
+                            <div className="px-3 py-1 text-xs font-semibold bg-purple-100 text-purple-700 rounded-full border border-purple-200 whitespace-nowrap">
+                                Gia sư
                             </div>
                         )}
                         {/* Auth menu */}
                         {!isAuthenticated ? (
                             <>
                                 <Button variant="ghost" asChild>
-                                    <Link to={ROUTES.SIGN_IN}>Sign In</Link>
+                                    <Link to={ROUTES.SIGN_IN}>Đăng nhập</Link>
                                 </Button>
                                 <Button asChild>
-                                    <Link to={ROUTES.SIGN_UP}>Sign Up</Link>
+                                    <Link to={ROUTES.SIGN_UP}>Đăng ký</Link>
                                 </Button>
                             </>
                         ) : (
@@ -243,25 +322,29 @@ const Header = () => {
                                 <DropdownMenuTrigger asChild>
                                     <Button
                                         variant="ghost"
-                                        className="h-10 w-10 rounded-full p-0"
+                                        className="h-10 w-10 rounded-full p-0 flex-shrink-0"
+                                        disabled={loading}
                                     >
-                                        <Avatar>
-                                            <AvatarImage src={user?.avatarURL} />
-                                            <AvatarFallback className="bg-blue-600 text-white font-semibold">
-                                                {getUserInitial(user?.fullName || "")}
-                                            </AvatarFallback>
-                                        </Avatar>
-
+                                        {loading ? (
+                                            <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse" />
+                                        ) : (
+                                            <SafeAvatar
+                                                src={user?.avatarURL || undefined}
+                                                alt={user?.fullName || "User avatar"}
+                                                fallback={getUserInitial(user?.fullName || "U")}
+                                                className="h-10 w-10"
+                                            />
+                                        )}
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-56">
                                     <DropdownMenuLabel>
                                         <div className="flex flex-col">
                                             <span className="text-sm font-medium">
-                                                {user?.fullName}
+                                                {user?.fullName || "Loading..."}
                                             </span>
                                             <span className="text-xs text-muted-foreground">
-                                                 {user?.email}
+                                                 {user?.email || ""}
                                              </span>
                                         </div>
                                     </DropdownMenuLabel>
@@ -270,38 +353,50 @@ const Header = () => {
 
                                     <DropdownMenuItem asChild>
                                         <Link to={ROUTES.PROFILE}>
-                                            <User className="mr-2 h-4 w-4" /> Profile
+                                            <User className="mr-2 h-4 w-4" /> Hồ sơ
                                         </Link>
                                     </DropdownMenuItem>
 
                                     {user?.role === "Tutor" && (
                                         <DropdownMenuItem asChild>
                                             <Link to={ROUTES.TUTOR_DASHBOARD}>
-                                                <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+                                                <LayoutDashboard className="mr-2 h-4 w-4" /> Bảng điều khiển
                                             </Link>
                                         </DropdownMenuItem>
                                     )}
                                         <>
                                             <DropdownMenuItem asChild>
                                                 <Link to={ROUTES.MY_ENROLLMENTS}>
-                                                    <GraduationCap className="mr-2 h-4 w-4" /> My Progress
+                                                    <GraduationCap className="mr-2 h-4 w-4" /> Tiến độ học tập
                                                 </Link>
                                             </DropdownMenuItem>
                                         </>
                                     <DropdownMenuItem asChild>
-                                        <Link to="/messages">
-                                            <MessageCircle className="mr-2 h-4 w-4" />Box Chat
+                                        <Link to="/my-bookings" className="cursor-pointer">
+                                            <Calendar className="mr-2 h-4 w-4" />
+                                            <span>Lịch học của tôi</span>
                                         </Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem asChild>
-                                        <Link to="/payment-history">
-                                            <CreditCard className="mr-2 h-4 w-4" /> Payment History
+                                        <Link to="/messages">
+                                            <MessageCircle className="mr-2 h-4 w-4" />Hộp chat
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link to={ROUTES.REFUND_REQUESTS} className="cursor-pointer">
+                                            <DollarSign className="mr-2 h-4 w-4" />
+                                            <span>Yêu cầu hoàn tiền</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link to={ROUTES.PAYMENT_HISTORY}>
+                                            <CreditCard className="mr-2 h-4 w-4" /> Lịch sử thanh toán
                                         </Link>
                                     </DropdownMenuItem>
 
                                     <DropdownMenuItem asChild>
                                         <Link to={ROUTES.CHANGE_PASSWORD}>
-                                            <Lock className="mr-2 h-4 w-4" /> Change Password
+                                            <Lock className="mr-2 h-4 w-4" /> Đổi mật khẩu
                                         </Link>
                                     </DropdownMenuItem>
 
@@ -314,7 +409,7 @@ const Header = () => {
                                                         : "/settings"
                                                 }
                                             >
-                                                <Settings className="mr-2 h-4 w-4" /> Settings
+                                                <Settings className="mr-2 h-4 w-4" /> Cài đặt
                                             </Link>
                                         </DropdownMenuItem>
                                     )}
@@ -325,7 +420,7 @@ const Header = () => {
                                         className="text-red-600"
                                         onClick={handleLogout}
                                     >
-                                        <LogOut className="mr-2 h-4 w-4" /> Logout
+                                        <LogOut className="mr-2 h-4 w-4" /> Đăng xuất
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
@@ -352,31 +447,31 @@ const Header = () => {
                     <div className="md:hidden border-t bg-white shadow-md">
                         <nav className="flex flex-col p-4 space-y-2">
                             <Link to={ROUTES.HOME} onClick={() => setMobileMenuOpen(false)}>
-                                Home
+                                Trang chủ
                             </Link>
                             <Link
                                 to={ROUTES.LANGUAGES}
                                 onClick={() => setMobileMenuOpen(false)}
                             >
-                                Languages
+                                Ngôn ngữ
                             </Link>
                             <Link
                                 to={ROUTES.TUTORS}
                                 onClick={() => setMobileMenuOpen(false)}
                             >
-                                Tutors
+                                Gia sư
                             </Link>
                             <Link
                                 to={ROUTES.BECOME_TUTOR}
                                 onClick={() => setMobileMenuOpen(false)}
                             >
-                                Become Tutor
+                                Trở thành gia sư
                             </Link>
                             <Link
                                 to={ROUTES.POLICY}
                                 onClick={() => setMobileMenuOpen(false)}
                             >
-                                Privacy & Terms
+                                Chính sách & Điều khoản
                             </Link>
                         </nav>
                     </div>

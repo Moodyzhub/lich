@@ -1,3 +1,4 @@
+import React from "react";
 import { motion } from "framer-motion";
 import {
   Star,
@@ -40,6 +41,13 @@ const formatPrice = (price: number) => {
 
 const TutorHeroSection = ({ tutor }: TutorHeroSectionProps) => {
   const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+
+  // Check authentication
+  React.useEffect(() => {
+    const token = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
+    setIsAuthenticated(Boolean(token));
+  }, []);
 
   // Animation preset
   const fadeInUp = {
@@ -124,13 +132,13 @@ const TutorHeroSection = ({ tutor }: TutorHeroSectionProps) => {
                     </h1>
 
                     <p className="text-lg text-blue-600 font-medium mb-2">
-                      {tutor.language || "Unknown"} Tutor
+                      Gia sư {tutor.language || "Chưa rõ"}
                     </p>
 
                     <div className="flex items-center gap-2 mb-2">
                       <MapPin className="w-4 h-4 text-gray-500" />
                       <span className="text-gray-600">
-                      {tutor.country || "Unknown Country"}
+                      {tutor.country || "Chưa rõ quốc gia"}
                     </span>
                     </div>
 
@@ -138,15 +146,15 @@ const TutorHeroSection = ({ tutor }: TutorHeroSectionProps) => {
                       <div className="flex items-center space-x-1">
                         <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                         <span className="font-medium">
-                        {tutor.rating?.toFixed(1) || "5.0"}
+                        {tutor.rating?.toFixed(2) || "5.00"}
                       </span>
-                        <span className="text-gray-500">(Evaluate)</span>
+                        <span className="text-gray-500">(Đánh giá)</span>
                       </div>
 
                       <div className="flex items-center space-x-1">
                         <Users className="w-5 h-5 text-gray-500" />
                         <span className="text-gray-600">
-                        Teaching language: {tutor.teachingLanguage}
+                        Ngôn ngữ giảng dạy: {tutor.teachingLanguage}
                       </span>
                       </div>
                     </div>
@@ -154,7 +162,7 @@ const TutorHeroSection = ({ tutor }: TutorHeroSectionProps) => {
                     <div className="flex items-center gap-2 mt-3">
                       <BookOpen className="w-5 h-5 text-gray-500" />
                       <span className="text-gray-600">
-                      Experience: {tutor.experience || "Not updated yet"}
+                      Kinh nghiệm: {tutor.experience || "Chưa cập nhật"}
                     </span>
                     </div>
                   </div>
@@ -164,7 +172,7 @@ const TutorHeroSection = ({ tutor }: TutorHeroSectionProps) => {
                 {tutor.specialties.length > 0 && (
                     <div className="mb-6">
                       <h3 className="font-semibold text-gray-900 mb-3">
-                        Specialties
+                        Chuyên môn
                       </h3>
                       <div className="flex flex-wrap gap-2">
                         {tutor.specialties.map((specialty, index) => (
@@ -181,10 +189,10 @@ const TutorHeroSection = ({ tutor }: TutorHeroSectionProps) => {
 
                 {/* Description */}
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">About Me</h3>
+                  <h3 className="font-semibold text-gray-900 mb-3">Về tôi</h3>
                   <p className="text-gray-700 leading-relaxed whitespace-pre-line">
                     {tutor.description ||
-                        "This tutor does not have a detailed description yet. Please come back later.."}
+                        "Gia sư này chưa có mô tả chi tiết. Vui lòng quay lại sau."}
                   </p>
                 </div>
               </div>
@@ -193,14 +201,23 @@ const TutorHeroSection = ({ tutor }: TutorHeroSectionProps) => {
               <div className="lg:col-span-1">
                 <div className="bg-gray-50 rounded-xl p-6">
                   <div className="text-center mb-6">
-                    <div className="flex items-center justify-center mb-2 space-x-2">
+                    <div className="flex items-center justify-center mb-3 space-x-2">
                     <span className="text-3xl font-bold text-green-500">
                       {formatPrice(tutor.price)}
                     </span>
-                      <span className="text-gray-500">/slot</span>
+                      <span className="text-gray-500">/giờ</span>
                     </div>
+                    
+                    <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm font-medium mb-3">
+                      <span className="text-xs">⏱️</span>
+                      <span>1 slot = 1 giờ</span>
+                    </div>
+                    
                     <p className="text-sm text-gray-600">
-                      Sign up now to get the best slot
+                      {isAuthenticated 
+                        ? "Chọn lịch phù hợp và bắt đầu học ngay!"
+                        : "Đăng ký ngay để nhận slot tốt nhất"
+                      }
                     </p>
                   </div>
 
@@ -213,7 +230,7 @@ const TutorHeroSection = ({ tutor }: TutorHeroSectionProps) => {
                         className="w-full bg-orange-500 text-white py-3 rounded-lg flex items-center justify-center gap-2 font-semibold hover:bg-orange-600 transition"
                     >
                       <Video className="w-5 h-5"/>
-                      <span>Booking</span>
+                      <span>Đặt lịch</span>
                     </Button>
 
                     <Button
@@ -222,7 +239,7 @@ const TutorHeroSection = ({ tutor }: TutorHeroSectionProps) => {
                         className="w-full border border-blue-500 text-blue-500 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
                     >
                       <MessageCircle className="w-5 h-5"/>
-                      <span>Send Message Now</span>
+                      <span>Nhắn tin ngay</span>
                     </Button>
                   </div>
 

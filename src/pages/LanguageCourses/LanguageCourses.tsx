@@ -112,13 +112,16 @@ const LanguageCourses = () => {
         const matchesPrice =
             course.price >= priceRange[0] && course.price <= priceRange[1];
 
+        const notPurchased = !course.isPurchased;
+
         return (
             matchesLanguage &&
             matchesSearch &&
             matchesCategory &&
             matchesLevel &&
             matchesRating &&
-            matchesPrice
+            matchesPrice &&
+            notPurchased
         );
     })
 
@@ -135,7 +138,7 @@ const LanguageCourses = () => {
     if (!currentLang) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <h2 className="text-2xl font-bold">Language not found</h2>
+                <h2 className="text-2xl font-bold">Không tìm thấy ngôn ngữ</h2>
             </div>
         );
     }

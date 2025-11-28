@@ -60,16 +60,16 @@ const WishlistContent = ({ wishlistItems, onRemoveItem }: WishlistContentProps) 
             >
               <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                Your wishlist is empty
+                Danh sách yêu thích trống
               </h2>
               <p className="text-gray-600 mb-8">
-                Start adding courses you're interested in!
+                Bắt đầu thêm các khóa học bạn quan tâm!
               </p>
               <Link
                   to="/languages"
                   className="bg-blue-500 text-white px-8 py-3 rounded-full font-semibold hover:bg-blue-600 transition-colors"
               >
-                Browse Courses
+                Khám phá khóa học
               </Link>
             </motion.div>
           </div>
@@ -92,8 +92,7 @@ const WishlistContent = ({ wishlistItems, onRemoveItem }: WishlistContentProps) 
                     variants={fadeInUp}
                     className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group cursor-pointer border border-blue-100"
                 >
-                  {/* ✅ Nội dung chính */}
-                  <Link to={`/course/${item.id}`} className="block hover:no-underline">
+                  <Link to={`/courses/${item.id}`} className="block hover:no-underline">
                     <div className="relative overflow-hidden">
                       <img
                           src={item.thumbnailURL}
@@ -150,14 +149,14 @@ const WishlistContent = ({ wishlistItems, onRemoveItem }: WishlistContentProps) 
                         className="flex items-center gap-1 bg-yellow-400 text-blue-900 px-3 py-1.5 rounded-md hover:bg-yellow-500 transition-colors text-sm font-semibold shadow-sm"
                     >
                       <ShoppingCart className="w-4 h-4" />
-                      <span>Buy</span>
+                      <span>Mua ngay</span>
                     </Link>
 
                     <button
                         onClick={() => onRemoveItem(item.id)}
                         className="flex items-center gap-1 text-blue-600 hover:text-red-500 text-sm font-medium transition-colors"
                     >
-                      <Trash2 className="w-4 h-4" /> Remove
+                      <Trash2 className="w-4 h-4" /> Xóa
                     </button>
                   </div>
 

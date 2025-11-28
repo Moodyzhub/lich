@@ -39,7 +39,7 @@ const TutorsGrid = ({ tutors, loading }: TutorsGridProps) => {
   if (loading) {
     return (
         <section className="py-16 text-center">
-          <p className="text-gray-500 text-lg">Loading tutors...</p>
+          <p className="text-gray-500 text-lg">Đang tải gia sư...</p>
         </section>
     );
   }
@@ -47,7 +47,7 @@ const TutorsGrid = ({ tutors, loading }: TutorsGridProps) => {
   if (!tutors || tutors.length === 0) {
     return (
         <section className="py-16 text-center">
-          <p className="text-gray-500 text-lg">No tutors found.</p>
+          <p className="text-gray-500 text-lg">Không tìm thấy gia sư.</p>
         </section>
     );
   }
@@ -118,9 +118,18 @@ const TutorsGrid = ({ tutors, loading }: TutorsGridProps) => {
                           <span>{tutor.language}</span>
                         </div>
 
-                        {/* DESCRIPTION */}
-                        <p className="text-gray-600 mb-4 text-sm line-clamp-2">
-                          {tutor.description}
+                        {/* DESCRIPTION - Fixed height with ellipsis */}
+                        <p 
+                          className="text-gray-600 mb-4 text-sm overflow-hidden"
+                          style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical',
+                            height: '4.5rem',
+                            lineHeight: '1.5rem'
+                          }}
+                        >
+                          {tutor.description || "Chưa có mô tả"}
                         </p>
 
                         {/* SPECIALTIES */}
@@ -136,19 +145,24 @@ const TutorsGrid = ({ tutors, loading }: TutorsGridProps) => {
                         </div>
 
                         {/* PRICE + CTA */}
-                        <div className="flex items-center justify-between mt-auto pt-4 border-t">
-                          <div className="flex items-center space-x-1">
-                        <span className="text-2xl font-bold text-green-600">
-                          {tutor.price?.toLocaleString()}₫
-                        </span>
-                            <span className="text-gray-500 text-sm">/slot</span>
+                        <div className="mt-auto pt-4 border-t">
+                          <div className="flex items-center justify-between mb-2">
+                            <div>
+                              <div className="flex items-center space-x-1">
+                                <span className="text-2xl font-bold text-green-600">
+                                  {tutor.price?.toLocaleString()}₫
+                                </span>
+                                <span className="text-gray-500 text-sm">/giờ</span>
+                              </div>
+                              <span className="text-xs text-gray-400">(1 slot = 1 giờ)</span>
+                            </div>
+                            <Link
+                                to={tutorDetailPath}
+                                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
+                            >
+                              Đặt lịch
+                            </Link>
                           </div>
-                          <Link
-                              to={tutorDetailPath}
-                              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
-                          >
-                            Book Trial
-                          </Link>
                         </div>
                       </div>
                     </Link>

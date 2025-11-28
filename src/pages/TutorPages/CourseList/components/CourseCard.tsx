@@ -17,6 +17,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
+import { useToast } from '@/components/ui/use-toast';
 import { CourseListItem } from '../course-list-api';
 import { getStatusConfig, formatPrice } from '../utils';
 import { createCourseDraft } from '../draft-course-api';
@@ -31,6 +32,7 @@ interface CourseCardProps {
 
 export const CourseCard = ({ course, index, onDelete, onEditApproved }: CourseCardProps) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const statusConfig = getStatusConfig(course.status);
   const StatusIcon = statusConfig.icon;
   
@@ -45,7 +47,6 @@ export const CourseCard = ({ course, index, onDelete, onEditApproved }: CourseCa
   
   // State for draft creation
   const [isCreatingDraft, setIsCreatingDraft] = useState(false);
-  const [draftError, setDraftError] = useState<string | null>(null);
 
   const handleDelete = () => {
     if (onDelete) {
@@ -53,10 +54,48 @@ export const CourseCard = ({ course, index, onDelete, onEditApproved }: CourseCa
     }
   };
   
-  const handleEditClick = () => {
+  const handleEditClick = async () => {
     if (isApproved) {
-      // Show confirmation dialog for approved courses
-      setShowConfirmDialog(true);
+      // Check draft status first before showing dialog
+      setIsCreatingDraft(true);
+      
+      try {
+        // Create/get draft from approved course
+        const draftData = await createCourseDraft(course.id);
+        
+        // Check draft status
+        if (draftData.status === 'PENDING_REVIEW') {
+          // Show toast warning if draft is pending review
+          toast({
+            variant: 'destructive',
+            title: 'Không thể chỉnh sửa',
+            description: 'Phiên bản cập nhật mới nhất của khóa học này đang được quản trị viên duyệt',
+          });
+          setIsCreatingDraft(false);
+          return;
+        }
+        
+        // Only allow editing if status is EDITING or REJECTED
+        if (draftData.status === 'EDITING' || draftData.status === 'REJECTED') {
+          // Show confirmation dialog
+          setShowConfirmDialog(true);
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Lỗi',
+            description: 'Không thể chỉnh sửa khóa học này lúc này',
+          });
+        }
+      } catch (error) {
+        console.error('Error checking course draft:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Lỗi',
+          description: error instanceof Error ? error.message : 'Không thể kiểm tra trạng thái khóa học. Vui lòng thử lại.',
+        });
+      } finally {
+        setIsCreatingDraft(false);
+      }
     } else {
       // Navigate directly for non-approved courses using React Router
       navigate(getCourseEditRoute(course.id));
@@ -68,14 +107,12 @@ export const CourseCard = ({ course, index, onDelete, onEditApproved }: CourseCa
     if (isCreatingDraft) return;
     
     setIsCreatingDraft(true);
-    setDraftError(null);
     
     try {
       // Create draft from approved course
       const draftData = await createCourseDraft(course.id);
       
       // Navigate to EditCourse with draft context using React Router
-      // Use the new draft-specific route with proper parameters
       navigate(getCourseDraftEditRoute(course.id, draftData.id), {
         state: {
           isDraft: true,
@@ -88,18 +125,19 @@ export const CourseCard = ({ course, index, onDelete, onEditApproved }: CourseCa
       if (onEditApproved) {
         onEditApproved(course.id);
       }
+      
+      // Close dialog on success
+      setShowConfirmDialog(false);
     } catch (error) {
       console.error('Error creating course draft:', error);
       setDraftError(error instanceof Error ? error.message : 'Không thể tạo bản nháp. Vui lòng thử lại.');
     } finally {
       setIsCreatingDraft(false);
-      setShowConfirmDialog(false);
     }
   };
   
   const handleCancelEdit = () => {
     setShowConfirmDialog(false);
-    setDraftError(null);
   };
 
   return (
@@ -248,11 +286,9 @@ export const CourseCard = ({ course, index, onDelete, onEditApproved }: CourseCa
         onOpenChange={setShowConfirmDialog}
         title="Xác nhận chỉnh sửa khóa học"
         description={
-          draftError 
-            ? `Lỗi: ${draftError}` 
-            : isCreatingDraft 
-              ? "Đang tạo bản nháp..." 
-              : "Bạn có chắc chắn muốn chỉnh sửa khóa học đã được duyệt không?"
+          isCreatingDraft 
+            ? "Đang tạo bản nháp..." 
+            : "Bạn có chắc chắn muốn chỉnh sửa khóa học đã được duyệt không?"
         }
         confirmText={isCreatingDraft ? "Đang tạo..." : "OK"}
         cancelText="Hủy"

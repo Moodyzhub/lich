@@ -5,6 +5,7 @@ import { AlertCircle, Loader2, CheckCircle2, Filter, BookOpen, FileEdit } from '
 import { courseApprovalApi } from './api';
 import { PendingCourse } from './types';
 import { Filters, CourseCard, Pagination } from './components';
+import { ROUTES } from '@/constants/routes';
 
 export default function CourseApprovalPage() {
   const navigate = useNavigate();
@@ -53,10 +54,8 @@ export default function CourseApprovalPage() {
         params: { status: 'PENDING_REVIEW' }
       });
       const drafts = draftResponse?.data?.result || [];
-      console.log('📊 Draft count:', drafts.length, drafts);
       setDraftCount(drafts.length);
     } catch (err) {
-      console.error('❌ Error fetching draft count:', err);
       setDraftCount(0);
     }
   };
@@ -86,7 +85,7 @@ export default function CourseApprovalPage() {
               <div className="flex items-center gap-4">
                 {/* Update Course Box - Same height as Pending box */}
                 <div 
-                  onClick={() => navigate('/admin/course-approval/drafts')}
+                  onClick={() => navigate(ROUTES.ADMIN_COURSE_APPROVAL_DRAFTS)}
                   className={`relative cursor-pointer rounded-lg px-5 py-3 border backdrop-blur-md transition-all duration-300 hover:scale-105 ${
                     draftCount > 0
                       ? 'bg-gradient-to-br from-orange-400/30 to-red-400/30 border-orange-300/60 hover:from-orange-400/40 hover:to-red-400/40 shadow-lg shadow-orange-500/20'
@@ -120,7 +119,7 @@ export default function CourseApprovalPage() {
                   <div className="flex items-center gap-3">
                     <CheckCircle2 className="w-5 h-5 text-yellow-300" />
                     <div>
-                      <p className="text-blue-100 text-xs font-medium">Pending</p>
+                      <p className="text-blue-100 text-xs font-medium">Chờ duyệt</p>
                       <p className="text-2xl font-bold text-white">{total}</p>
                     </div>
                   </div>
@@ -154,7 +153,7 @@ export default function CourseApprovalPage() {
                   </div>
                 </div>
                 <Button
-                  onClick={() => navigate('/admin/course-approval/drafts')}
+                  onClick={() => navigate(ROUTES.ADMIN_COURSE_APPROVAL_DRAFTS)}
                   className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium shadow-sm hover:shadow-md transition-all px-4 py-2 text-sm"
                 >
                   <FileEdit className="w-4 h-4 mr-1.5" />

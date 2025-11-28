@@ -7,6 +7,7 @@ import { ApplicationList } from './components/application-list';
 import { Filters } from './components/filters';
 import { Application } from './types';
 import { tutorApprovalApi as tutorApi } from './api';
+import { routeHelpers } from '@/constants/routes';
 
 export default function TutorApproval() {
   const navigate = useNavigate();
@@ -33,7 +34,7 @@ export default function TutorApproval() {
 
   const handleViewDetail = (application: Application) => {
     // Navigate to detail page instead of opening modal
-    navigate(`/admin/tutor-approval/${application.id}`);
+    navigate(routeHelpers.adminTutorApprovalDetail(application.id));
   };
 
   return (
@@ -47,19 +48,19 @@ export default function TutorApproval() {
                 <div className="bg-white bg-opacity-20 p-3 rounded-lg">
                   <Users className="w-8 h-8" />
                 </div>
-                Tutor Application Management
+                Quản lý đơn đăng ký giảng viên
               </h1>
-              <p className="text-blue-100 text-lg">Review and approve learner applications to become tutors</p>
+              <p className="text-blue-100 text-lg">Xem xét và phê duyệt đơn đăng ký trở thành giảng viên</p>
             </div>
           </div>
           
           <div className="flex items-center gap-6">
             <div className="bg-white bg-opacity-15 backdrop-blur-sm rounded-xl px-6 py-4 border border-white border-opacity-20 hover:bg-opacity-20 transition-all">
-              <p className="text-blue-100 text-sm font-semibold uppercase tracking-wide">Pending Review</p>
+              <p className="text-blue-100 text-sm font-semibold uppercase tracking-wide">Chờ duyệt</p>
               <p className="text-4xl font-bold text-white mt-1">{pendingCount}</p>
             </div>
             <div className="bg-white bg-opacity-15 backdrop-blur-sm rounded-xl px-6 py-4 border border-white border-opacity-20 hover:bg-opacity-20 transition-all">
-              <p className="text-blue-100 text-sm font-semibold uppercase tracking-wide">Total Applications</p>
+              <p className="text-blue-100 text-sm font-semibold uppercase tracking-wide">Tổng đơn đăng ký</p>
               <p className="text-4xl font-bold text-white mt-1">{totalCount}</p>
             </div>
           </div>
@@ -73,7 +74,7 @@ export default function TutorApproval() {
         <div className="bg-white rounded-xl shadow-md border border-blue-100 p-8 mb-8 hover:shadow-lg transition-all">
           <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
             <Filter className="w-6 h-6 text-indigo-600" />
-            Search & Filter Applications
+            Tìm kiếm & Lọc đơn đăng ký
           </h2>
           <Filters
             searchQuery={searchQuery}
@@ -90,7 +91,7 @@ export default function TutorApproval() {
               variant="outline"
               className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-300 font-semibold"
             >
-              ↻ Reset Filters
+              ↻ Đặt lại bộ lọc
             </Button>
           </div>
         </div>
@@ -102,8 +103,8 @@ export default function TutorApproval() {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-100 to-blue-100 rounded-full mb-4">
                 <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
               </div>
-              <p className="text-gray-700 font-semibold text-lg">Loading applications...</p>
-              <p className="text-gray-500 text-sm mt-2">Please wait while we fetch the applications</p>
+              <p className="text-gray-700 font-semibold text-lg">Đang tải đơn đăng ký...</p>
+              <p className="text-gray-500 text-sm mt-2">Vui lòng đợi trong khi chúng tôi tải dữ liệu</p>
             </div>
           </div>
         ) : error ? (
@@ -113,7 +114,7 @@ export default function TutorApproval() {
                 <AlertCircle className="w-12 h-12 text-red-500" />
               </div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">Error Loading Applications</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">Lỗi tải đơn đăng ký</h3>
             <p className="text-gray-600 text-lg">{(error as Error).message}</p>
           </div>
         ) : applications.length === 0 ? (
@@ -123,11 +124,11 @@ export default function TutorApproval() {
                 <CheckCircle2 className="w-12 h-12 text-indigo-500" />
               </div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">No Applications Found</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">Không tìm thấy đơn đăng ký</h3>
             <p className="text-gray-600 text-lg">
               {searchQuery || statusFilter
-                ? 'Try adjusting your search or filter criteria'
-                : 'All applications have been reviewed!'}
+                ? 'Thử điều chỉnh tiêu chí tìm kiếm hoặc bộ lọc'
+                : 'Tất cả đơn đăng ký đã được xem xét!'}
             </p>
           </div>
         ) : (

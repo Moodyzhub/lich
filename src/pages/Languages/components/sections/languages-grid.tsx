@@ -32,13 +32,14 @@ const LanguagesGrid = ({ languages }: LanguagesGridProps) => {
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case "Beginner Friendly":
+      case "Dễ cho người mới":
+      case "Dễ":
         return "bg-green-100 text-green-800";
-      case "Moderate":
+      case "Trung bình":
         return "bg-yellow-100 text-yellow-800";
-      case "Challenging":
+      case "Khó":
         return "bg-orange-100 text-orange-800";
-      case "Very Challenging":
+      case "Rất khó":
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -58,7 +59,7 @@ const LanguagesGrid = ({ languages }: LanguagesGridProps) => {
             {languages.map((language, index) => (
                 <motion.div
                     key={index}
-                    className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group cursor-pointer"
+                    className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group cursor-pointer flex flex-col"
                     variants={fadeInUp}
                 >
                   {/* IMAGE + FLAG + NAME */}
@@ -81,7 +82,7 @@ const LanguagesGrid = ({ languages }: LanguagesGridProps) => {
                   </div>
 
                   {/* CONTENT */}
-                  <div className="p-6 space-y-4">
+                  <div className="p-6 space-y-4 flex flex-col flex-1">
                 <span
                     className={`px-3 py-1 rounded-full text-sm font-medium ${getDifficultyColor(
                         language.difficulty
@@ -90,11 +91,11 @@ const LanguagesGrid = ({ languages }: LanguagesGridProps) => {
                   {language.difficulty}
                 </span>
 
-                    <p className="text-gray-600 text-sm">{language.description}</p>
+                    <p className="text-gray-600 text-sm line-clamp-3 min-h-[60px]">{language.description}</p>
 
-                    <div>
+                    <div className="flex-1">
                       <h4 className="font-semibold text-gray-900 mb-2">
-                        Certifications
+                        Chứng chỉ
                       </h4>
                       <div className="flex flex-wrap gap-2">
                         {language.certificates.map((cert, i) => (
@@ -110,9 +111,9 @@ const LanguagesGrid = ({ languages }: LanguagesGridProps) => {
 
                     <Link
                         to={`/languages/${language.name.toLowerCase()}`}
-                        className="block w-full text-center bg-blue-500 text-white py-2 rounded-lg font-semibold hover:bg-blue-600 transition"
+                        className="block w-full text-center bg-blue-500 text-white py-2 rounded-lg font-semibold hover:bg-blue-600 transition mt-auto"
                     >
-                      Explore Courses
+                      Khám phá khóa học
                     </Link>
                   </div>
                 </motion.div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, User, Calendar, MapPin, Phone, Mail } from 'lucide-react';
+import { Ban, User, Calendar, MapPin, Phone, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 import { Badge } from '@/components/ui/badge';
@@ -96,9 +96,9 @@ const UserRow: React.FC<UserRowProps> = ({ user, onRemoveUser, onAddUser }) => {
               ? "bg-green-100 text-green-800 hover:bg-green-200" 
               : "bg-gray-100 text-gray-800 hover:bg-gray-200"
             }
-            aria-label={`User status: ${user.isActive ? 'Active' : 'Inactive'}`}
+            aria-label={`Trạng thái người dùng: ${user.isActive ? 'Hoạt động' : 'Không hoạt động'}`}
           >
-            {user.isActive ? 'Active' : 'Inactive'}
+            {user.isActive ? 'Hoạt động' : 'Không hoạt động'}
           </Badge>
         </TableCell>
 
@@ -121,14 +121,14 @@ const UserRow: React.FC<UserRowProps> = ({ user, onRemoveUser, onAddUser }) => {
           <div className="space-y-1">
             <div className="text-xs text-gray-600 flex items-center gap-1">
               <Calendar className="w-3 h-3" aria-hidden="true" />
-              <span>Created: {formatDate(user.createdAt)}</span>
+              <span>Tạo: {formatDate(user.createdAt)}</span>
             </div>
             <div className="text-xs text-gray-500">
-              Updated: {formatDate(user.updatedAt)}
+              Cập nhật: {formatDate(user.updatedAt)}
             </div>
             {user.dob && (
               <div className="text-xs text-gray-500">
-                DOB: {formatDate(user.dob)}
+                Sinh nhật: {formatDate(user.dob)}
               </div>
             )}
           </div>
@@ -141,11 +141,12 @@ const UserRow: React.FC<UserRowProps> = ({ user, onRemoveUser, onAddUser }) => {
               variant="outline"
               size="sm"
               onClick={() => setShowDeleteModal(true)}
-              className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-              aria-label={`Delete user ${user.fullName || user.username}`}
+              className="text-orange-600 border-orange-200 hover:bg-orange-50 hover:border-orange-300 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+              aria-label={`Dừng hoạt động ${user.fullName || user.username}`}
+              title="Dừng hoạt động"
             >
-              <Trash2 className="w-4 h-4" aria-hidden="true" />
-              <span className="sr-only">Delete</span>
+              <Ban className="w-4 h-4" aria-hidden="true" />
+              <span className="sr-only">Dừng hoạt động</span>
             </Button>
           </div>
         </TableCell>

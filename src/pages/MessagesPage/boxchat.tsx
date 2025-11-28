@@ -12,7 +12,6 @@ const Messages = () => {
   const [selectedConversation, setSelectedConversation] = useState<number | null>(
       initialRoomId
   );
-
   useEffect(() => {
     if (conversationId) {
       setSelectedConversation(Number(conversationId));
@@ -27,13 +26,11 @@ const Messages = () => {
   return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 py-8">
-
-          {/* Wrapper không overflow-hidden */}
           <div
-              className="bg-white rounded-lg shadow-lg"
+              className="bg-white rounded-lg shadow-lg overflow-hidden"
               style={{ height: "calc(100vh - 8rem)" }}
           >
-            <div className="grid grid-cols-1 md:grid-cols-3 h-full min-h-0">
+            <div className="grid grid-cols-1 md:grid-cols-3 h-full">
 
               {/* LEFT LIST */}
               <ConversationsList
@@ -49,7 +46,7 @@ const Messages = () => {
                     <div className="h-full flex items-center justify-center text-gray-500">
                       <div className="text-center">
                         <div className="text-6xl mb-4">💬</div>
-                        <p className="text-xl">Select a conversation to start messaging</p>
+                        <p className="text-xl">Chọn một cuộc trò chuyện để bắt đầu nhắn tin</p>
                       </div>
                     </div>
                 )}

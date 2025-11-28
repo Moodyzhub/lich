@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Step1CourseInfo } from './components/course-info';
 import { CourseObjectives, type ObjectiveItem } from './components/course-objectives';
-import { Step2CourseContent } from './components/course-content';
-import { CourseFormData, SectionData, courseApi } from '@/pages/TutorPages/CreateCourse/course-api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import CourseStructure from './components/course-structure';
+import { CourseFormData, SectionData, courseApi, getCourseDetail, getObjectives } from '@/pages/TutorPages/CreateCourse/course-api';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { ROUTES } from '@/constants/routes';
 import {
   Dialog,
   DialogContent,
@@ -14,19 +15,62 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { CheckCircle2, ArrowLeft } from 'lucide-react';
+import { CheckCircle2, ArrowLeft, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+
+const STORAGE_KEY = 'createCourseProgress';
 
 export default function CreateCourse() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [courseId, setCourseId] = useState<string>('');
-  const [courseData, setCourseData] = useState<Partial<CourseFormData>>({});
-  const [objectives, setObjectives] = useState<ObjectiveItem[]>([]);
-  const [sections, setSections] = useState<SectionData[]>([]);
-  const [error, setError] = useState<string | null>(null);
+
+  // Initialize state from sessionStorage if available
+  const getInitialState = () => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          currentStep: parsed.currentStep || 1,
+          courseId: parsed.courseId || '',
+          courseData: parsed.courseData || {},
+          objectives: parsed.objectives || [],
+          sections: parsed.sections || [],
+        };
+      }
+    } catch (error) {
+      console.error('Error loading saved progress:', error);
+    }
+    return {
+      currentStep: 1,
+      courseId: '',
+      courseData: {},
+      objectives: [],
+      sections: [],
+    };
+  };
+
+  const initialState = getInitialState();
+  const hasRestoredProgress = initialState.courseId !== '';
+
+  const [currentStep, setCurrentStep] = useState(initialState.currentStep);
+  const [courseId, setCourseId] = useState<string>(initialState.courseId);
+  const [courseData, setCourseData] = useState<Partial<CourseFormData>>(initialState.courseData);
+  const [objectives, setObjectives] = useState<ObjectiveItem[]>(initialState.objectives);
+  const [sections, setSections] = useState<SectionData[]>(initialState.sections);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+
+  // Show toast when progress is restored
+  useEffect(() => {
+    if (hasRestoredProgress) {
+      toast({
+        title: "Tiến trình đã được khôi phục",
+        description: "Bạn có thể tiếp tục từ nơi đã dừng lại.",
+        duration: 3000,
+      });
+    }
+  }, []);
 
   // Helper function to validate URL
   const isValidUrl = (url: string): boolean => {
@@ -38,27 +82,87 @@ export default function CreateCourse() {
     }
   };
 
+  // Save progress to sessionStorage whenever state changes
+  useEffect(() => {
+    if (courseId) {
+      const progressData = {
+        currentStep,
+        courseId,
+        courseData,
+        objectives,
+        sections,
+      };
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(progressData));
+    }
+  }, [currentStep, courseId, courseData, objectives, sections]);
+
+  // Fetch data when navigating back to steps
+  useEffect(() => {
+    const fetchStepData = async () => {
+      if (!courseId) return;
+
+      setIsLoadingData(true);
+      try {
+        // Step 1: Fetch course info
+        if (currentStep === 1) {
+          const courseInfo = await getCourseDetail(courseId);
+          setCourseData(courseInfo);
+        }
+
+        // Step 2: Fetch objectives
+        if (currentStep === 2) {
+          const objectivesData = await getObjectives(courseId);
+          const formattedObjectives = objectivesData.map((obj: any) => ({
+            id: obj.objectiveID?.toString() || obj.id?.toString(),
+            objectiveText: obj.objectiveText,
+            orderIndex: obj.orderIndex,
+          }));
+          setObjectives(formattedObjectives);
+        }
+
+        // Step 3: Keep sections in state (no API fetch)
+        // Sections will only be saved to DB when user clicks "Submit"
+      } catch (err) {
+        console.error('Error fetching step data:', err);
+        toast({
+          variant: 'destructive',
+          title: 'Lỗi',
+          description: 'Không thể tải dữ liệu. Vui lòng thử lại.',
+        });
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    fetchStepData();
+  }, [currentStep, courseId]);
+
   const handleStep1Next = async (data: CourseFormData) => {
-    setError(null);
-    // If courseId exists, we are editing an existing course
     try {
       if (courseId) {
+        // Course already exists, update it
+        // Note: You may need to add an updateCourse API function if needed
+        // For now, just save to state and move to next step
         setCourseData(data);
         setCurrentStep(2);
         return;
       }
 
+      // Create new course
       const { courseId: newCourseId } = await courseApi.createCourse(data);
       setCourseId(newCourseId);
       setCourseData(data);
       setCurrentStep(2);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create course');
+      toast({
+        variant: 'destructive',
+        title: 'Lỗi',
+        description: err instanceof Error ? err.message : 'Không thể tạo khóa học',
+      });
     }
   };
 
   const handleStep1aNext = async (objectivesList: ObjectiveItem[]) => {
-    setError(null);
     try {
       // Save objectives to backend and collect response IDs
       const updatedObjectives: ObjectiveItem[] = [];
@@ -84,7 +188,11 @@ export default function CreateCourse() {
       setObjectives(updatedObjectives);
       setCurrentStep(3); // Move to Course Content
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save objectives');
+      toast({
+        variant: 'destructive',
+        title: 'Lỗi',
+        description: err instanceof Error ? err.message : 'Không thể lưu mục tiêu học tập',
+      });
     }
   };
 
@@ -93,42 +201,79 @@ export default function CreateCourse() {
   };
 
   const handleStep2Save = async (sectionsData: SectionData[]) => {
+    // Save sections to state first
     setSections(sectionsData);
-    setError(null);
 
     try {
       // Validate all data before creating
       for (const section of sectionsData) {
         if (!section.title?.trim()) {
-          throw new Error('Section title is required');
+          toast({
+            variant: "destructive",
+            title: "Lỗi",
+            description: 'Tiêu đề chương là bắt buộc',
+          });
+          return;
         }
         
         if (section.lessons.length === 0) {
-          throw new Error(`Section "${section.title}" must have at least one lesson`);
+          toast({
+            variant: "destructive",
+            title: "Lỗi",
+            description: `Chương "${section.title}" phải có ít nhất một bài học`,
+          });
+          return;
         }
 
         for (const lesson of section.lessons) {
           if (!lesson.title?.trim()) {
-            throw new Error('Lesson title is required');
+            toast({
+              variant: "destructive",
+              title: "Lỗi",
+              description: 'Tiêu đề bài học là bắt buộc',
+            });
+            return;
           }
 
           if (lesson.resources && lesson.resources.length > 0) {
             for (const resource of lesson.resources) {
               if (!resource.resourceTitle?.trim()) {
-                throw new Error('Resource title is required');
+                toast({
+                  variant: "destructive",
+                  title: "Lỗi",
+                  description: 'Tiêu đề tài nguyên là bắt buộc',
+                });
+                return;
               }
               if (!resource.resourceURL?.trim()) {
-                throw new Error('Resource URL is required');
+                toast({
+                  variant: "destructive",
+                  title: "Lỗi",
+                  description: 'URL tài nguyên là bắt buộc',
+                });
+                return;
               }
               if (!isValidUrl(resource.resourceURL)) {
-                throw new Error(`Invalid resource URL: "${resource.resourceURL}". Must start with http:// or https://`);
+                toast({
+                  variant: "destructive",
+                  title: "Lỗi",
+                  description: `URL tài nguyên không hợp lệ: "${resource.resourceURL}". Phải bắt đầu bằng http:// hoặc https://`,
+                });
+                return;
               }
             }
           }
         }
       }
 
-      // All validation passed, proceed with creation
+      // All validation passed, proceed with API creation
+      toast({
+        title: "Đang xử lý...",
+        description: "Đang tạo nội dung khóa học...",
+        duration: 2000,
+      });
+
+      // Create sections, lessons, and resources via API
       for (const section of sectionsData) {
         let sectionId: string = '';
         try {
@@ -140,7 +285,7 @@ export default function CreateCourse() {
           });
           sectionId = result.sectionId;
         } catch (sectionErr) {
-          throw new Error(`Failed to create section "${section.title}": ${sectionErr instanceof Error ? sectionErr.message : 'Unknown error'}`);
+          throw new Error(`Không thể tạo chương "${section.title}": ${sectionErr instanceof Error ? sectionErr.message : 'Lỗi không xác định'}`);
         }
 
         for (const lesson of section.lessons) {
@@ -156,7 +301,7 @@ export default function CreateCourse() {
             });
             lessonId = result.lessonId;
           } catch (lessonErr) {
-            throw new Error(`Failed to create lesson "${lesson.title}": ${lessonErr instanceof Error ? lessonErr.message : 'Unknown error'}`);
+            throw new Error(`Không thể tạo bài học "${lesson.title}": ${lessonErr instanceof Error ? lessonErr.message : 'Lỗi không xác định'}`);
           }
 
           if (lesson.resources && lesson.resources.length > 0) {
@@ -168,7 +313,7 @@ export default function CreateCourse() {
                   resourceURL: resource.resourceURL,
                 });
               } catch (resourceErr) {
-                throw new Error(`Failed to add resource "${resource.resourceTitle}": ${resourceErr instanceof Error ? resourceErr.message : 'Unknown error'}`);
+                throw new Error(`Không thể thêm tài nguyên "${resource.resourceTitle}": ${resourceErr instanceof Error ? resourceErr.message : 'Lỗi không xác định'}`);
               }
             }
           }
@@ -176,25 +321,26 @@ export default function CreateCourse() {
       }
 
       toast({
-        title: "Success!",
-        description: "Course content saved! Submitting course...",
+        title: "Thành công!",
+        description: "Nội dung khóa học đã được lưu! Đang gửi khóa học...",
         duration: 2000,
       });
 
+      // Submit course for approval
       const submitResult = await courseApi.submitCourse(courseId);
 
       if (submitResult.success && (submitResult.status.toLowerCase() === 'pending' || submitResult.status.toLowerCase() === 'draft')) {
+        // Clear saved progress after successful submission
+        sessionStorage.removeItem(STORAGE_KEY);
         setShowSuccessModal(true);
       } else {
-        throw new Error(`Submit failed: Invalid status ${submitResult.status}`);
+        throw new Error(`Gửi thất bại: Trạng thái không hợp lệ ${submitResult.status}`);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save course content');
-
       toast({
         variant: "destructive",
-        title: "Error",
-        description: err instanceof Error ? err.message : 'Failed to save course content',
+        title: "Lỗi",
+        description: err instanceof Error ? err.message : 'Không thể lưu nội dung khóa học',
       });
     }
   };
@@ -205,16 +351,16 @@ export default function CreateCourse() {
         <div className="mb-8">
           <Button
             variant="outline"
-            onClick={() => navigate('/courses')}
+            onClick={() => navigate(ROUTES.TUTOR_COURSES)}
             className="mb-4 gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Course List
+            Quay lại danh sách khóa học
           </Button>
 
-          <h1 className="text-3xl font-bold text-gray-900">Create New Course</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Tạo khóa học mới</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Share your knowledge by creating an engaging course
+            Chia sẻ kiến thức của bạn bằng cách tạo một khóa học hấp dẫn
           </p>
         </div>
 
@@ -232,7 +378,7 @@ export default function CreateCourse() {
                 >
                   {currentStep > 1 ? <CheckCircle2 className="w-6 h-6" /> : '1'}
                 </div>
-                <span className="mt-2 text-sm font-medium text-center">Information</span>
+                <span className="mt-2 text-sm font-medium text-center">Thông tin</span>
               </div>
 
               <div
@@ -254,7 +400,7 @@ export default function CreateCourse() {
                 >
                   {currentStep > 2 ? <CheckCircle2 className="w-6 h-6" /> : '2'}
                 </div>
-                <span className="mt-2 text-sm font-medium text-center">Objectives</span>
+                <span className="mt-2 text-sm font-medium text-center">Mục tiêu</span>
               </div>
 
               <div
@@ -276,17 +422,11 @@ export default function CreateCourse() {
                 >
                   3
                 </div>
-                <span className="mt-2 text-sm font-medium text-center">Content</span>
+                <span className="mt-2 text-sm font-medium text-center">Nội dung</span>
               </div>
             </div>
           </div>
         </div>
-
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
 
         <Card>
           <CardHeader>
@@ -299,27 +439,43 @@ export default function CreateCourse() {
             </CardTitle> */}
           </CardHeader>
           <CardContent>
-            {currentStep === 1 && (
-              <Step1CourseInfo
-                data={courseData}
-                onNext={handleStep1Next}
-              />
-            )}
+            {isLoadingData ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-3" />
+                  <p className="text-gray-600">Đang tải dữ liệu...</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                {currentStep === 1 && (
+                  <Step1CourseInfo
+                    data={courseData}
+                    onNext={handleStep1Next}
+                  />
+                )}
 
-            {currentStep === 2 && (
-              <CourseObjectives
-                objectives={objectives}
-                onNext={handleStep1aNext}
-                onBack={handleStep1aBack}
-              />
-            )}
+                {currentStep === 2 && (
+                  <CourseObjectives
+                    objectives={objectives}
+                    onNext={handleStep1aNext}
+                    onBack={handleStep1aBack}
+                    onDeleteObjective={async (objectiveId: string) => {
+                      await courseApi.deleteObjective(objectiveId);
+                    }}
+                  />
+                )}
 
-            {currentStep === 3 && (
-              <Step2CourseContent
-                sections={sections}
-                onSave={handleStep2Save}
-                onBack={() => setCurrentStep(2)}
-              />
+                {currentStep === 3 && (
+                  <CourseStructure
+                    sections={sections}
+                    onSectionsChange={setSections}
+                    onSave={handleStep2Save}
+                    onBack={() => setCurrentStep(2)}
+                    isSubmitting={false}
+                  />
+                )}
+              </>
             )}
           </CardContent>
         </Card>
@@ -334,28 +490,28 @@ export default function CreateCourse() {
               </div>
             </div>
             <DialogTitle className="text-2xl font-bold text-gray-900">
-              🎉 Course Created Successfully!
+              🎉 Tạo khóa học thành công!
             </DialogTitle>
             <DialogDescription className="text-base text-gray-600">
-              Your course is now pending admin approval.
+              Khóa học của bạn đang chờ quản trị viên phê duyệt.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-4">
             <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
-              <p className="text-sm text-gray-600 mb-1"> Course Title</p>
+              <p className="text-sm text-gray-600 mb-1">Tên khóa học</p>
               <p className="font-semibold text-gray-900 text-lg">{courseData.title}</p>
             </div>
 
             <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
-              <p className="text-sm text-gray-600 mb-1"> Status</p>
-              <p className="font-semibold text-blue-600">Pending</p>
+              <p className="text-sm text-gray-600 mb-1">Trạng thái</p>
+              <p className="font-semibold text-blue-600">Đang chờ duyệt</p>
             </div>
           </div>
 
           <DialogFooter className="flex gap-3 mt-6">
             <Button
-              onClick={() => navigate('/courses')}
+              onClick={() => navigate(ROUTES.TUTOR_COURSES)}
               className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
             >
               OK

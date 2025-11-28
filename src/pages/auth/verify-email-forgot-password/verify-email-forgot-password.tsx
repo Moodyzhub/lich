@@ -10,12 +10,12 @@ import { z } from "zod";
 import { ROUTES } from "@/constants/routes";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import api from "@/config/axiosConfig";
+import api, { CustomAxiosRequestConfig } from "@/config/axiosConfig";
 import { AxiosError } from "axios";
 
 //  Validate OTP
 const verifyEmailSchema = z.object({
-  otpCode: z.string().length(6, "OTP code must be 6 digits"),
+  otpCode: z.string().length(6, "Mã OTP phải có 6 chữ số"),
 });
 type VerifyEmailForm = z.infer<typeof verifyEmailSchema>;
 
@@ -61,13 +61,15 @@ const VerifyEmailForgotPassword = () => {
     setApiError(null);
 
     try {
-      await api.post("/auth/verify-reset-otp", { otp: data.otpCode });
+      await api.post("/auth/verify-reset-otp", { otp: data.otpCode }, {
+        skipAuth: true
+      } as CustomAxiosRequestConfig);
 
       localStorage.removeItem("temp_forgot_password_email");
       setTimeout(() => navigate(ROUTES.RESET_PASSWORD), 0);
     } catch (err: unknown) {
       const error = err as AxiosError<{ message?: string }>;
-      setApiError(error.response?.data?.message ?? "Invalid OTP");
+      setApiError(error.response?.data?.message ?? "Mã OTP không hợp lệ");
     } finally {
       setIsVerifying(false);
     }
@@ -81,12 +83,14 @@ const VerifyEmailForgotPassword = () => {
     setResending(true);
 
     try {
-      await api.post("/auth/forgot-password", { email });
+      await api.post("/auth/forgot-password", { email }, {
+        skipAuth: true
+      } as CustomAxiosRequestConfig);
       setCountdown(20);
       setCanResend(false);
-      setResendMessage(" A new OTP has been sent to your email.");
+      setResendMessage("Mã OTP mới đã được gửi đến email của bạn.");
     } catch {
-      setResendMessage(" Failed to resend OTP.");
+      setResendMessage("Gửi lại OTP thất bại.");
     } finally {
       setResending(false);
     }
@@ -105,9 +109,9 @@ const VerifyEmailForgotPassword = () => {
                 Lingua<span className="text-blue-500">Hub</span>
               </div>
             </Link>
-            <h2 className="text-3xl font-bold text-gray-900">Verify OTP</h2>
+            <h2 className="text-3xl font-bold text-gray-900">Xác thực OTP</h2>
             <p className="text-gray-600">
-              Enter the OTP sent to <strong>{email}</strong>
+              Nhập mã OTP đã được gửi đến <strong>{email}</strong>
             </p>
           </div>
 
@@ -120,7 +124,7 @@ const VerifyEmailForgotPassword = () => {
                 <Input
                     type="text"
                     maxLength={6}
-                    {...register("otpCode", { setValueAs: (v) => v.replace(/\D/g, "") })}
+                    {...register("otpCode", { setValueAs: (v: string) => v.replace(/\D/g, "") })}
                     className="text-center text-2xl tracking-widest"
                     placeholder="000000"
                     disabled={isVerifying}
@@ -133,10 +137,10 @@ const VerifyEmailForgotPassword = () => {
                   {isVerifying ? (
                       <div className="flex items-center justify-center gap-2">
                         <LoadingSpinner size="sm" />
-                        Verifying...
+                        Đang xác thực...
                       </div>
                   ) : (
-                      "Verify OTP"
+                      "Xác thực OTP"
                   )}
                 </Button>
               </form>
@@ -144,7 +148,7 @@ const VerifyEmailForgotPassword = () => {
 
             {/* Resend OTP */}
             <div className="space-y-4 text-center">
-              <p className="text-sm text-gray-500">Didn't receive the code?</p>
+              <p className="text-sm text-gray-500">Không nhận được mã?</p>
 
               <Button
                   variant="outline"
@@ -157,7 +161,7 @@ const VerifyEmailForgotPassword = () => {
                 ) : (
                     <>
                       <RefreshCw className="w-4 h-4 mr-2" />
-                      {canResend ? "Resend OTP" : `Resend in ${countdown}s`}
+                      {canResend ? "Gửi lại OTP" : `Gửi lại sau ${countdown}s`}
                     </>
                 )}
               </Button>
@@ -165,7 +169,7 @@ const VerifyEmailForgotPassword = () => {
               {resendMessage && <p className="text-sm text-green-700">{resendMessage}</p>}
 
               <Button asChild variant="ghost" className="w-full">
-                <Link to={ROUTES.FORGOT_PASSWORD}>Back to Forgot Password</Link>
+                <Link to={ROUTES.FORGOT_PASSWORD}>Quay lại Quên mật khẩu</Link>
               </Button>
             </div>
           </motion.div>

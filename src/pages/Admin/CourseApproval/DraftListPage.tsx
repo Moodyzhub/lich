@@ -5,6 +5,7 @@ import { AlertCircle, Loader2, CheckCircle2, Filter, FileEdit, ArrowLeft } from 
 import axios from '@/config/axiosConfig';
 import { PendingCourse, PaginatedResponse, ApprovalFilters } from './types';
 import { Filters, CourseCard, Pagination } from './components';
+import { ROUTES, routeHelpers } from '@/constants/routes';
 
 export default function DraftListPage() {
   const navigate = useNavigate();
@@ -85,13 +86,12 @@ export default function DraftListPage() {
       setTotal(totalCount);
       setCurrentPage(page);
     } catch (err: any) {
-      console.error('❌ Error fetching draft courses:', err);
       
       // Handle specific error cases
       if (err?.response?.status === 403) {
         setError('Bạn không có quyền truy cập trang này');
         // Redirect to dashboard after showing error
-        setTimeout(() => navigate('/admin/dashboard'), 2000);
+        setTimeout(() => navigate(ROUTES.ADMIN_DASHBOARD), 2000);
       } else if (err?.response?.status === 404) {
         setError('Không tìm thấy danh sách khóa học cập nhật');
       } else if (!err?.response) {
@@ -113,7 +113,7 @@ export default function DraftListPage() {
   }, [searchQuery, selectedCategory]);
 
   const handleDraftClick = (draftId: number) => {
-    navigate(`/admin/course-approval/drafts/${draftId}`);
+    navigate(routeHelpers.adminCourseApprovalDraftDetail(draftId));
   };
 
   return (
@@ -126,7 +126,7 @@ export default function DraftListPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <Button
-                  onClick={() => navigate('/admin/course-approval')}
+                  onClick={() => navigate(ROUTES.ADMIN_COURSE_APPROVAL)}
                   variant="ghost"
                   size="sm"
                   className="text-white hover:bg-white/20"
@@ -146,7 +146,7 @@ export default function DraftListPage() {
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-yellow-300" />
                   <div>
-                    <p className="text-blue-100 text-xs font-medium">Pending Review</p>
+                    <p className="text-blue-100 text-xs font-medium">Chờ xem xét</p>
                     <p className="text-2xl font-bold text-white">{total}</p>
                   </div>
                 </div>
@@ -213,7 +213,7 @@ export default function DraftListPage() {
                 Thử lại
               </Button>
               <Button
-                onClick={() => navigate('/admin/course-approval')}
+                onClick={() => navigate(ROUTES.ADMIN_COURSE_APPROVAL)}
                 size="sm"
                 variant="ghost"
                 className="text-red-700 hover:bg-red-100"
@@ -237,7 +237,7 @@ export default function DraftListPage() {
               <CheckCircle2 className="w-8 h-8 text-gray-400" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Không có khóa học cập nhật nào đang Pending Review
+              Không có khóa học cập nhật nào đang chờ xem xét
             </h3>
             <p className="text-gray-500 text-sm">
               {searchQuery || selectedCategory !== 'all'
@@ -249,9 +249,11 @@ export default function DraftListPage() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 mb-6">
               {drafts.map((draft) => (
-                <div key={draft.id} onClick={() => handleDraftClick(draft.id)}>
-                  <CourseCard course={draft} />
-                </div>
+                <CourseCard 
+                  key={draft.id} 
+                  course={draft} 
+                  onClick={() => handleDraftClick(draft.id)}
+                />
               ))}
             </div>
             <Pagination

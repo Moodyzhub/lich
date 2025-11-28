@@ -6,6 +6,7 @@ import CalendarSlots, { SelectedSlot, PackageItem } from "./components/sections/
 import BenefitsCommitment from "./components/sections/benefits-commitment";
 import BookingSummary from "./components/sections/booking-summary";
 import { useUserInfo } from "@/hooks/useUserInfo";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Tutor {
   tutorId: number;
@@ -38,6 +39,7 @@ interface RawPackage {
 const BookTutor = () => {
   const { tutorId } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { user, loading: userLoading } = useUserInfo();
   const [tutor, setTutor] = useState<Tutor | null>(null);
   const [packages, setPackages] = useState<PackageItem[]>([]);
@@ -59,7 +61,7 @@ const BookTutor = () => {
         const raw = tutorRes.data;
         const normalizedTutor: Tutor = {
           tutorId: raw.tutorId || raw.id || Number(tutorId),
-          name: raw.userName || raw.name || raw.fullName || "Unnamed Tutor",
+          name: raw.userName || raw.name || raw.fullName || "Gia sư chưa đặt tên",
           avatarUrl: raw.avatarURL || raw.avatarUrl || raw.image || null,
           country: raw.country || "Unknown",
           phone: raw.phone || null,
@@ -109,11 +111,19 @@ const BookTutor = () => {
   /** ===================== BOOKING ===================== */
   const handleBooking = async () => {
     if (selectedSlots.length === 0) {
-      alert("You must select at least 1 session.");
+      toast({
+        variant: "destructive",
+        title: "Chưa chọn buổi học",
+        description: "Bạn phải chọn ít nhất 1 buổi học.",
+      });
       return;
     }
     if (selectedPackage && selectedSlots.length !== selectedPackage.maxSlot) {
-      alert(`You must select exactly ${selectedPackage.maxSlot} sessions.`);
+      toast({
+        variant: "destructive",
+        title: "Chưa đủ số buổi học",
+        description: `Bạn phải chọn đúng ${selectedPackage.maxSlot} buổi học cho gói này.`,
+      });
       return;
     }
     if (!user) {
@@ -123,14 +133,13 @@ const BookTutor = () => {
     try {
       const formattedSlots = selectedSlots.map((slot) => {
         const [hour, minute] = slot.time.split(":");
-        const startTime = `${slot.date}T${hour.padStart(2, "0")}:${minute.padStart(
-            2,
-            "0"
-        )}`;
-        const endTime = `${slot.date}T${String(Number(hour) + 1).padStart(
-            2,
-            "0"
-        )}:${minute.padStart(2, "0")}`;
+        const startTime = `${slot.date}T${hour.padStart(2, "0")}:${minute.padStart(2, "0")}`;
+        
+        // Calculate end time: add 1 hour
+        const startHour = Number(hour);
+        const endHour = (startHour + 1) % 24;
+        
+        const endTime = `${slot.date}T${String(endHour).padStart(2, "0")}:${minute.padStart(2, "0")}`;
         return { startTime, endTime };
       });
       const body = {
@@ -143,17 +152,26 @@ const BookTutor = () => {
       if (res.data?.checkoutUrl) {
         window.location.href = res.data.checkoutUrl;
       } else {
-        alert("Cannot create payment.");
+        toast({
+          variant: "destructive",
+          title: "Tạo thanh toán thất bại",
+          description: "Không thể tạo thanh toán. Vui lòng thử lại.",
+        });
       }
     } catch (error) {
       console.error("Payment error:", error);
-      alert("Failed to create payment.");
+      toast({
+        variant: "destructive",
+        title: "Thanh toán thất bại",
+        description: "Không thể tạo thanh toán. Vui lòng thử lại sau.",
+      });
     }
   };
 
-  if (loading || userLoading) return <div className="text-center py-10">Loading...</div>;
+  if (loading || userLoading) return <div className="text-center py-10">Đang tải...</div>;
 
   /** ===================== PRICE ===================== */
+  // Each slot has the full tutor price (not divided)
   const totalPrice = tutor
       ? selectedPackage
           ? selectedPackage.maxSlot * tutor.pricePerHour
@@ -169,7 +187,7 @@ const BookTutor = () => {
               className="mb-6 text-blue-600 hover:text-blue-700 flex items-center space-x-2"
           >
             <span>←</span>
-            <span>Back</span>
+            <span>Quay lại</span>
           </button>
           <div className="space-y-8">
             <TutorInfo tutor={tutor!} />
@@ -201,20 +219,20 @@ const BookTutor = () => {
               <div className="max-w-7xl mx-auto flex justify-between items-center px-4">
                 <div>
                   <p className="font-semibold text-gray-800">
-                    {selectedSlots.length} session(s) selected
+                    Đã chọn {selectedSlots.length} buổi học
                   </p>
                   {selectedPackage ? (
                       <p className="text-sm text-gray-600">
-                        {selectedSlots.length}/{selectedPackage.maxSlot} sessions —{" "}
+                        {selectedSlots.length}/{selectedPackage.maxSlot} buổi —{" "}
                         {selectedSlots.length < selectedPackage.maxSlot
-                            ? `select ${
+                            ? `chọn thêm ${
                                 selectedPackage.maxSlot - selectedSlots.length
-                            } more`
-                            : "ready to confirm"}
+                            } buổi`
+                            : "sẵn sàng xác nhận"}
                       </p>
                   ) : (
                       <p className="text-sm text-gray-600 italic">
-                        Slot-only booking (no package selected)
+                        Đặt lịch đơn lẻ (không chọn gói)
                       </p>
                   )}
                 </div>
@@ -228,7 +246,7 @@ const BookTutor = () => {
                       }
                       className="bg-blue-600 text-white px-5 py-2 rounded-lg shadow hover:bg-blue-700"
                   >
-                    Review & Confirm
+                    Xem & Xác nhận
                   </button>
                 </div>
               </div>

@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, DollarSign, User, Calendar, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PendingCourse } from '../types';
+import { routeHelpers } from '@/constants/routes';
 
 interface CourseCardProps {
   course: PendingCourse;
@@ -29,7 +30,7 @@ export function CourseCard({
       onClick();
     } else {
       const isDraftParam = course.isDraft ? '?isDraft=true' : '';
-      navigate(`/admin/course-approval/${course.id}${isDraftParam}`);
+      navigate(routeHelpers.adminCourseApprovalDetail(course.id) + isDraftParam);
     }
   };
 
@@ -67,12 +68,17 @@ export function CourseCard({
           {/* Status Badge */}
           {course.status === 'Pending' && showPendingBadge && (
             <Badge className="bg-yellow-500 text-white font-semibold shadow-md">
-              Pending
+              Chờ duyệt
             </Badge>
           )}
           {course.status === 'Pending Review' && showPendingBadge && (
             <Badge className="bg-orange-500 text-white font-semibold shadow-md">
-              Pending Review
+              Chờ xem xét
+            </Badge>
+          )}
+          {course.status === 'Chờ xem xét' && showPendingBadge && (
+            <Badge className="bg-orange-500 text-white font-semibold shadow-md">
+              Chờ xem xét
             </Badge>
           )}
           {course.status === 'Approved' && (

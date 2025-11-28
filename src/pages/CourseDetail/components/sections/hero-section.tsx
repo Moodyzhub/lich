@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Clock, Star, Heart } from "lucide-react";
 import api from "@/config/axiosConfig";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { ROUTES } from "@/constants/routes.ts";
 import { getUserId } from "@/lib/getUserId.ts";
@@ -47,7 +47,6 @@ interface CourseHeroSectionProps {
 
 const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSectionProps) => {
   const navigate = useNavigate();
-  const [isOwner, setIsOwner] = useState(false);
   const { toast } = useToast();
 
 
@@ -96,23 +95,12 @@ const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSect
     });
   };
 
-  /* ------------------- Check khóa học thuộc tutor ------------------- */
+  /* ------------------- Auto remove wishlist if purchased ------------------- */
   useEffect(() => {
-    const checkTutorCourse = async () => {
-      try {
-        const res = await api.get("/tutor/courses/me");
-        const mine = res.data.result || [];
-        const found = mine.some((c: { id: number }) => c.id === course.id);
-        if (found) setIsOwner(true);
-      } catch {}
-    };
-
-    checkTutorCourse();
-
     if (course.isPurchased) {
       setWishlisted(false);
     }
-  }, [course.id, course.isPurchased]);
+  }, [course.isPurchased]);
 
   /* ------------------- Wishlist toggle ------------------- */
   const toggleWishlist = async () => {
@@ -248,7 +236,7 @@ const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSect
                 {normalizedCourse.categoryName}
               </span>
                 <span className="text-sm opacity-90">
-                Created on: {formatDate(normalizedCourse.createdAt)}
+                Tạo lúc: {formatDate(normalizedCourse.createdAt)}
               </span>
               </div>
 
@@ -263,17 +251,17 @@ const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSect
                   {normalizedCourse.avgRating.toFixed(1)}
                 </span>
                   <span className="opacity-80 text-sm">
-                  ({normalizedCourse.totalRatings} reviews)
+                  ({normalizedCourse.totalRatings} đánh giá)
                 </span>
                 </div>
 
                 <span>•</span>
-                <span>{normalizedCourse.learnerCount} learners</span>
+                <span>{normalizedCourse.learnerCount} học viên</span>
               </div>
 
               <div className="flex items-center space-x-2 mb-6">
                 <Clock className="w-5 h-5 text-blue-200" />
-                <span>{normalizedCourse.duration} hours</span>
+                <span>{normalizedCourse.duration} giờ</span>
               </div>
 
               <span className="text-3xl font-bold mb-6 block">
@@ -281,8 +269,8 @@ const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSect
             </span>
 
               <div className="flex gap-4 mt-4">
-                {/* Wishlist */}
-                {!isOwner && !normalizedCourse.isPurchased && (
+                {/* Wishlist - Only show if not purchased */}
+                {!normalizedCourse.isPurchased && (
                     <button
                         onClick={toggleWishlist}
                         className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all border border-white ${
@@ -298,24 +286,24 @@ const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSect
                                   : "text-white"
                           }`}
                       />
-                      {wishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
+                      {wishlisted ? "Xóa khỏi yêu thích" : "Thêm vào yêu thích"}
                     </button>
                 )}
 
-                {/* BUTTON: Go to Course */}
-                {isOwner || normalizedCourse.isPurchased ? (
+                {/* BUTTON: Go to Course or Buy Now */}
+                {normalizedCourse.isPurchased ? (
                     <button
                         onClick={goToFirstLesson}
                         className="px-6 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition"
                     >
-                      Go to Course
+                      Vào học
                     </button>
                 ) : (
                     <button
                         onClick={handleBuyNow}
                         className="px-6 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition"
                     >
-                      Buy Now
+                      Mua ngay
                     </button>
                 )}
               </div>
@@ -328,11 +316,13 @@ const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSect
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8 }}
             >
-              <img
-                  src={normalizedCourse.thumbnailURL}
-                  alt={normalizedCourse.title}
-                  className="rounded-2xl shadow-2xl"
-              />
+              <div className="relative w-full h-[400px] rounded-2xl overflow-hidden shadow-2xl bg-gray-100">
+                <img
+                    src={normalizedCourse.thumbnailURL}
+                    alt={normalizedCourse.title}
+                    className="w-full h-full object-cover"
+                />
+              </div>
             </motion.div>
 
           </div>

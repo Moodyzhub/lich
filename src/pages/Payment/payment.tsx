@@ -25,10 +25,10 @@ const Payment = () => {
                   className="flex items-center space-x-2 text-gray-600 hover:text-blue-500 transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
-                <span>Back to Course</span>
+                <span>Quay lại khóa học</span>
               </Link>
               <div className="text-gray-300">|</div>
-              <h1 className="text-2xl font-bold text-gray-900">Payment</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Thanh toán</h1>
             </div>
           </div>
         </section>

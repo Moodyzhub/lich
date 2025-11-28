@@ -14,7 +14,7 @@ import api from "@/config/axiosConfig";
 
 // ✅ Schema validate email
 const emailVerificationSchema = z.object({
-  email: z.string().email('Invalid email format'),
+  email: z.string().email('Định dạng email không hợp lệ'),
 });
 type EmailVerificationForm = z.infer<typeof emailVerificationSchema>;
 
@@ -73,8 +73,8 @@ const ForgotPassword = () => {
                 Lingua<span className="text-blue-500">Hub</span>
               </div>
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Forgot Password?</h2>
-            <p className="text-gray-600">Enter your email to receive a reset code</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Quên mật khẩu?</h2>
+            <p className="text-gray-600">Nhập email của bạn để nhận mã đặt lại</p>
           </div>
 
           {/* Form */}
@@ -90,7 +90,7 @@ const ForgotPassword = () => {
               {/* Email */}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
+                  Địa chỉ Email
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -103,7 +103,7 @@ const ForgotPassword = () => {
                       required
                       autoComplete="email"
                       className="pl-10"
-                      placeholder="Enter your email address"
+                      placeholder="Nhập địa chỉ email của bạn"
                       aria-invalid={errors.email ? 'true' : 'false'}
                   />
                 </div>
@@ -112,7 +112,7 @@ const ForgotPassword = () => {
 
               {/* Submit Button */}
               <Button type="submit" className="w-full" disabled={isLoading || !isValid}>
-                {isLoading ? <LoadingSpinner size="sm" /> : 'Send Reset Link'}
+                {isLoading ? <LoadingSpinner size="sm" /> : 'Gửi liên kết đặt lại'}
               </Button>
             </form>
 
@@ -123,7 +123,7 @@ const ForgotPassword = () => {
                   className="inline-flex items-center space-x-2 text-sm font-medium text-blue-600 hover:text-blue-500"
               >
                 <ArrowLeft className="w-4 h-4" />
-                <span>Back to Sign In</span>
+                <span>Quay lại Đăng nhập</span>
               </Link>
             </div>
           </motion.div>

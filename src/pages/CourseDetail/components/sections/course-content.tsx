@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { BookOpen, ChevronDown, ChevronRight, CheckCircle } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, CheckCircle, PlayCircle, ClipboardCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
@@ -63,8 +63,8 @@ const CourseContent = ({ course, isPurchased }: CourseContentProps) => {
         if (!token) {
             toast({
                 variant: "destructive",
-                title: "Login required",
-                description: "Please log in to access lessons.",
+                title: "Yêu cầu đăng nhập",
+                description: "Vui lòng đăng nhập để truy cập bài học.",
             });
             return;
         }
@@ -72,8 +72,8 @@ const CourseContent = ({ course, isPurchased }: CourseContentProps) => {
         if (!isPurchased) {
             toast({
                 variant: "destructive",
-                title: "Purchase required",
-                description: "You must purchase the course before accessing lessons.",
+                title: "Yêu cầu mua khóa học",
+                description: "Bạn phải mua khóa học trước khi truy cập bài học.",
             });
             return;
         }
@@ -96,7 +96,7 @@ const CourseContent = ({ course, isPurchased }: CourseContentProps) => {
                 viewport={{ once: true }}
                 variants={fadeInUp}
             >
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">What You'll Learn</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Bạn sẽ học được gì</h2>
 
                 {course.objectives && course.objectives.length > 0 ? (
                     <ul className="space-y-3">
@@ -108,7 +108,7 @@ const CourseContent = ({ course, isPurchased }: CourseContentProps) => {
                         ))}
                     </ul>
                 ) : (
-                    <p className="text-gray-500">This course has no objectives provided.</p>
+                    <p className="text-gray-500">Khóa học này chưa có mục tiêu cụ thể.</p>
                 )}
             </motion.div>
 
@@ -120,7 +120,7 @@ const CourseContent = ({ course, isPurchased }: CourseContentProps) => {
                 viewport={{ once: true }}
                 variants={fadeInUp}
             >
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Requirements</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Yêu cầu</h2>
                 <p className="text-gray-700 whitespace-pre-line leading-relaxed">
                     {course.requirement}
                 </p>
@@ -135,7 +135,7 @@ const CourseContent = ({ course, isPurchased }: CourseContentProps) => {
                     viewport={{ once: true }}
                     variants={fadeInUp}
                 >
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Course Curriculum</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Chương trình học</h2>
 
                     <div className="space-y-4">
                         {course.section.map((section) => {
@@ -146,28 +146,28 @@ const CourseContent = ({ course, isPurchased }: CourseContentProps) => {
 
                                     {/* Section Header */}
                                     <div
-                                        className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition"
+                                        className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition gap-4"
                                         onClick={() => toggleSection(section.sectionID)}
                                     >
-                                        <div>
+                                        <div className="flex-1 min-w-0">
                                             <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                                                 {isExpanded ? (
-                                                    <ChevronDown className="w-5 h-5" />
+                                                    <ChevronDown className="w-5 h-5 flex-shrink-0" />
                                                 ) : (
-                                                    <ChevronRight className="w-5 h-5" />
+                                                    <ChevronRight className="w-5 h-5 flex-shrink-0" />
                                                 )}
-                                                {section.orderIndex}. {section.title}
+                                                <span className="truncate">{section.orderIndex}. {section.title}</span>
                                             </h3>
 
                                             {section.description && (
-                                                <p className="text-sm text-gray-500 mt-1">
+                                                <p className="text-sm text-gray-500 mt-1 line-clamp-2">
                                                     {section.description}
                                                 </p>
                                             )}
                                         </div>
 
-                                        <span className="text-sm text-gray-500">
-                                            {section.lessons.length} lessons
+                                        <span className="text-sm text-gray-500 whitespace-nowrap flex-shrink-0">
+                                            {section.lessons.length} bài học
                                         </span>
                                     </div>
 
@@ -179,19 +179,31 @@ const CourseContent = ({ course, isPurchased }: CourseContentProps) => {
                                             exit={{ opacity: 0, height: 0 }}
                                             className="border-t border-gray-200 p-4 space-y-2"
                                         >
-                                            {section.lessons.map((lesson) => (
-                                                <li
-                                                    key={lesson.lessonID}
-                                                    className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 cursor-pointer transition-colors"
-                                                    onClick={() => handleLessonClick(lesson.lessonID)}
-                                                >
-                                                    <BookOpen className="w-4 h-4 text-blue-500" />
-                                                    <span>{lesson.title}</span>
-                                                    <span className="text-xs text-gray-400 ml-auto">
-                                                        {lesson.duration} min
-                                                    </span>
-                                                </li>
-                                            ))}
+                                            {section.lessons.map((lesson) => {
+                                                const lessonType = lesson.lessonType?.toLowerCase();
+                                                const LessonIcon = 
+                                                    lessonType === 'video' ? PlayCircle :
+                                                    lessonType === 'quiz' ? ClipboardCheck :
+                                                    BookOpen;
+                                                const iconColor = 
+                                                    lessonType === 'video' ? 'text-blue-500' :
+                                                    lessonType === 'quiz' ? 'text-purple-500' :
+                                                    'text-blue-500';
+
+                                                return (
+                                                    <li
+                                                        key={lesson.lessonID}
+                                                        className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 cursor-pointer transition-colors"
+                                                        onClick={() => handleLessonClick(lesson.lessonID)}
+                                                    >
+                                                        <LessonIcon className={`w-4 h-4 ${iconColor} flex-shrink-0`} />
+                                                        <span className="flex-1">{lesson.title}</span>
+                                                        <span className="text-xs text-gray-400">
+                                                            {lesson.duration} phút
+                                                        </span>
+                                                    </li>
+                                                );
+                                            })}
                                         </motion.ul>
                                     )}
                                 </div>

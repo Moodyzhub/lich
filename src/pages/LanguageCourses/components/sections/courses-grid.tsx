@@ -41,8 +41,8 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
             navigate(`${ROUTES.SIGN_IN}?redirect=${redirect}`);
 
             toast({
-                title: "Login Required",
-                description: "Please sign in.",
+                title: "Yêu cầu đăng nhập",
+                description: "Vui lòng đăng nhập.",
                 variant: "destructive",
             });
 
@@ -64,8 +64,8 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
             }));
         } catch {
             toast({
-                title: "Error",
-                description: "Failed to update wishlist.",
+                title: "Lỗi",
+                description: "Không thể cập nhật danh sách yêu thích.",
                 variant: "destructive",
             });
         }
@@ -85,19 +85,16 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
     if (loading)
         return (
             <div className="py-20 text-center text-lg font-medium">
-                Loading courses...
+                Đang tải khóa học...
             </div>
         );
 
-    /** 🟦 REMOVE purchased courses */
-    const visibleCourses = courses.filter((c) => !c.isPurchased);
-
-    if (visibleCourses.length === 0)
+    if (courses.length === 0)
         return (
             <section className="py-16 text-center">
-                <h2 className="text-xl font-semibold">No available courses</h2>
+                <h2 className="text-xl font-semibold">Không có khóa học</h2>
                 <p className="text-muted-foreground mt-2">
-                    You have already purchased all courses.
+                    Bạn đã mua tất cả các khóa học có sẵn.
                 </p>
             </section>
         );
@@ -113,7 +110,7 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
                 animate="animate"
                 variants={staggerContainer}
             >
-                {visibleCourses.map((course) => {
+                {courses.map((course) => {
                     const isWishlisted = wishlistMap[course.id] ?? false;
 
                     return (
@@ -197,7 +194,7 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
                                         <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
                                             <div className="flex items-center gap-2">
                                                 <Clock className="w-4 h-4" />
-                                                <span>{course.duration} hours</span>
+                                                <span>{course.duration} giờ</span>
                                             </div>
                                             <span className="text-xs bg-gray-100 px-2 py-1 rounded">
                                                 {course.language}
@@ -211,7 +208,7 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
                                                     {course.price.toLocaleString()}₫
                                                 </div>
                                                 <span className="text-xs text-muted-foreground">
-                                                    Created: {formatDate(course.createdAt)}
+                                                    Tạo: {formatDate(course.createdAt)}
                                                 </span>
                                             </div>
 
@@ -223,7 +220,7 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
                                                     navigate(`/courses/${course.id}`);
                                                 }}
                                             >
-                                                Join
+                                                Tham gia
                                             </Button>
                                         </div>
 

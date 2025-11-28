@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -50,77 +50,118 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [thumbnailURLPreview, setThumbnailPreview] = useState<string | null>(null);
   
-  // Get hardcoded categories and languages (no API call needed)
-  const categories: Category[] = getCategories();
+  // Categories and languages state
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const languages: Language[] = getLanguages();
+
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setIsLoadingCategories(true);
+        const categoriesData = await getCategories();
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+        setCategories([]);
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const validateField = (name: string, value: unknown): string | undefined => {
     switch (name) {
       case 'title':
-        if (!value || typeof value !== 'string') return 'Title is required';
-        if (value.length < 3) return 'Title must be at least 3 characters';
-        if (value.length > 100) return 'Title must not exceed 100 characters';
+        if (!value || typeof value !== 'string') return 'Tiêu đề là bắt buộc';
+        if (value.length < 3) return 'Tiêu đề phải có ít nhất 3 ký tự';
+        if (value.length > 100) return 'Tiêu đề không được vượt quá 100 ký tự';
         return undefined;
 
       case 'shortDescription':
         if (!value || typeof value !== 'string')
-          return 'Short description is required';
+          return 'Mô tả ngắn là bắt buộc';
         if (value.length < 5)
-          return 'Short description must be at least 5 characters';
+          return 'Mô tả ngắn phải có ít nhất 5 ký tự';
         if (value.length > 200)
-          return 'Short description must not exceed 200 characters';
+          return 'Mô tả ngắn không được vượt quá 200 ký tự';
         return undefined;
 
       case 'description':
         if (!value || typeof value !== 'string')
-          return 'Description is required';
+          return 'Mô tả là bắt buộc';
         if (value.length < 5)
-          return 'Description must be at least 5 characters';
+          return 'Mô tả phải có ít nhất 5 ký tự';
         if (value.length > 1000)
-          return 'Description must not exceed 1000 characters';
+          return 'Mô tả không được vượt quá 1000 ký tự';
         return undefined;
 
       case 'requirement':
         if (!value || typeof value !== 'string')
-          return 'Requirements are required';
+          return 'Yêu cầu là bắt buộc';
         if (value.length < 5)
-          return 'Requirements must be at least 5 characters';
+          return 'Yêu cầu phải có ít nhất 5 ký tự';
         if (value.length > 500)
-          return 'Requirements must not exceed 500 characters';
+          return 'Yêu cầu không được vượt quá 500 ký tự';
         return undefined;
 
       case 'level':
-        if (!value) return 'Level is required';
+        if (!value) return 'Cấp độ là bắt buộc';
         return undefined;
 
       case 'categoryID':
-        if (!value) return 'Category is required';
+        if (!value) return 'Danh mục là bắt buộc';
         return undefined;
 
       case 'language':
-        if (!value) return 'Language is required';
+        if (!value) return 'Ngôn ngữ là bắt buộc';
         return undefined;
 
       case 'duration':
-        if (!value) return 'Duration is required';
+        if (!value) return 'Thời lượng là bắt buộc';
         const duration = Number(value);
-        if (isNaN(duration)) return 'Duration must be a number';
+        if (isNaN(duration)) return 'Thời lượng phải là số';
         if (duration < 1 || duration > 999)
-          return 'Duration must be between 1 and 999 hours';
+          return 'Thời lượng phải từ 1 đến 999 giờ';
         return undefined;
 
       case 'price':
         if (value === undefined || value === null || value === '')
-          return 'Price is required';
+          return 'Giá là bắt buộc';
         const price = Number(value);
-        if (isNaN(price)) return 'Price must be a number';
-        if (price < 0) return 'Price cannot be negative';
-        if (price > 999999999) return 'Price must not exceed 999,999,999 VND';
-        if (!Number.isInteger(price)) return 'Price must be a whole number';
+        if (isNaN(price)) return 'Giá phải là số';
+        if (price < 0) return 'Giá không thể âm';
+        if (price > 999999999) return 'Giá không được vượt quá 999,999,999 VND';
+        if (!Number.isInteger(price)) return 'Giá phải là số nguyên';
         return undefined;
 
       case 'thumbnailURL':
-        if (!value) return 'thumbnailURL is required';
+        if (!value || typeof value !== 'string') return 'Vui lòng nhập URL ảnh bìa';
+        if (!value.trim()) return 'Vui lòng nhập URL ảnh bìa';
+        
+        // Validate URL format
+        try {
+          const url = new URL(value);
+          if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+            return 'URL phải bắt đầu bằng http:// hoặc https://';
+          }
+          
+          // Validate image extension
+          const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+          const hasValidExtension = validExtensions.some(ext => 
+            value.toLowerCase().includes(ext)
+          );
+          
+          if (!hasValidExtension) {
+            return 'URL phải là ảnh hợp lệ (JPG, PNG, WEBP, GIF)';
+          }
+        } catch (error) {
+          return 'URL không hợp lệ. Vui lòng nhập URL đầy đủ (VD: https://example.com/image.jpg)';
+        }
+        
         return undefined;
 
       default:
@@ -148,24 +189,25 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
   };
 
   const handleThumbnailUrlChange = (url: string) => {
-    // Validate URL format
+    // Update form data
+    setFormData((prev) => ({ ...prev, thumbnailURL: url || undefined }));
+    
+    // Clear preview and errors if empty
     if (!url.trim()) {
-      setFormData((prev) => ({ ...prev, thumbnailURL: undefined }));
       setThumbnailPreview(null);
       setErrors((prev) => ({ ...prev, thumbnailURL: undefined }));
       return;
     }
 
-    try {
-      new URL(url); // Validate URL syntax
-      setFormData((prev) => ({ ...prev, thumbnailURL: url }));
+    // Validate using the same validation function
+    const error = validateField('thumbnailURL', url);
+    
+    if (error) {
+      setThumbnailPreview(null);
+      setErrors((prev) => ({ ...prev, thumbnailURL: error }));
+    } else {
       setThumbnailPreview(url);
       setErrors((prev) => ({ ...prev, thumbnailURL: undefined }));
-    } catch {
-      setErrors((prev) => ({
-        ...prev,
-        thumbnailURL: 'Please enter a valid URL',
-      }));
     }
   };
 
@@ -180,8 +222,8 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
     const allTouched: Record<string, boolean> = {};
     const allErrors: ValidationErrors = {};
 
-    // Validate all required fields
-    ['title', 'shortDescription', 'description', 'requirement', 'categoryID', 'language', 'level', 'duration', 'price'].forEach((key) => {
+    // Validate all required fields including thumbnailURL
+    ['title', 'shortDescription', 'description', 'requirement', 'categoryID', 'language', 'level', 'duration', 'price', 'thumbnailURL'].forEach((key) => {
       allTouched[key] = true;
       const error = validateField(key, formData[key as keyof CourseFormData]);
       if (error) allErrors[key as keyof ValidationErrors] = error;
@@ -191,9 +233,37 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
     setErrors(allErrors);
 
     if (Object.keys(allErrors).length === 0) {
-      console.log('Form data before submit:', formData);
       onNext(formData as CourseFormData);
     }
+  };
+
+  // Check if form is valid
+  const isFormValid = () => {
+    // Check if all required fields are filled
+    const requiredFields: (keyof CourseFormData)[] = [
+      'title',
+      'shortDescription',
+      'description',
+      'requirement',
+      'categoryID',
+      'language',
+      'level',
+      'duration',
+      'price',
+      'thumbnailURL'
+    ];
+
+    const allFieldsFilled = requiredFields.every((field) => {
+      const value = formData[field];
+      if (typeof value === 'string') return value.trim() !== '';
+      if (typeof value === 'number') return value > 0;
+      return value !== undefined && value !== null;
+    });
+
+    // Check if there are any errors
+    const hasErrors = Object.values(errors).some((error) => error !== undefined);
+
+    return allFieldsFilled && !hasErrors;
   };
 
   return (
@@ -201,14 +271,14 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
       <div className="space-y-4">
         <div>
           <Label htmlFor="title" className="text-sm font-medium">
-            Course Title <span className="text-red-500">*</span>
+            Tiêu đề khóa học <span className="text-red-500">*</span>
           </Label>
           <Input
             id="title"
             value={formData.title || ''}
             onChange={(e) => handleChange('title', e.target.value)}
             onBlur={() => handleBlur('title')}
-            placeholder="e.g., Complete English for Beginners"
+            placeholder="VD: Tiếng Anh giao tiếp cho người mới bắt đầu"
             className={errors.title && touched.title ? 'border-red-500' : ''}
           />
           {errors.title && touched.title && (
@@ -218,14 +288,14 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
 
         <div>
           <Label htmlFor="shortDescription" className="text-sm font-medium">
-            Short Description <span className="text-red-500">*</span>
+            Mô tả ngắn <span className="text-red-500">*</span>
           </Label>
           <Input
             id="shortDescription"
             value={formData.shortDescription || ''}
             onChange={(e) => handleChange('shortDescription', e.target.value)}
             onBlur={() => handleBlur('shortDescription')}
-            placeholder="Brief summary of your course (max 200 characters)"
+            placeholder="Tóm tắt ngắn gọn về khóa học (tối đa 200 ký tự)"
             maxLength={200}
             className={errors.shortDescription && touched.shortDescription ? 'border-red-500' : ''}
           />
@@ -243,14 +313,14 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
 
         <div>
           <Label htmlFor="description" className="text-sm font-medium">
-            Description <span className="text-red-500">*</span>
+            Mô tả chi tiết <span className="text-red-500">*</span>
           </Label>
           <Textarea
             id="description"
             value={formData.description || ''}
             onChange={(e) => handleChange('description', e.target.value)}
             onBlur={() => handleBlur('description')}
-            placeholder="Describe your course..."
+            placeholder="Mô tả chi tiết về khóa học của bạn..."
             rows={4}
             className={
               errors.description && touched.description
@@ -272,14 +342,14 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
 
         <div>
           <Label htmlFor="requirement" className="text-sm font-medium">
-            Requirements <span className="text-red-500">*</span>
+            Yêu cầu <span className="text-red-500">*</span>
           </Label>
           <Textarea
             id="requirement"
             value={formData.requirement || ''}
             onChange={(e) => handleChange('requirement', e.target.value)}
             onBlur={() => handleBlur('requirement')}
-            placeholder="List the requirements to take this course..."
+            placeholder="Liệt kê các yêu cầu để tham gia khóa học..."
             rows={4}
             className={
               errors.requirement && touched.requirement
@@ -301,7 +371,7 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
 
         <div>
           <Label htmlFor="category" className="text-sm font-medium">
-            Category <span className="text-red-500">*</span>
+            Danh mục <span className="text-red-500">*</span>
           </Label>
           <Select
             value={formData.categoryID?.toString() || ''}
@@ -309,6 +379,7 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
               handleChange('categoryID', parseInt(value));
               setTouched((prev) => ({ ...prev, categoryID: true }));
             }}
+            disabled={isLoadingCategories}
           >
             <SelectTrigger
               className={
@@ -317,12 +388,12 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
                   : ''
               }
             >
-              <SelectValue placeholder="Select a category" />
+              <SelectValue placeholder={isLoadingCategories ? "Đang tải..." : "Chọn danh mục"} />
             </SelectTrigger>
             <SelectContent>
               {categories.map((category) => (
-                <SelectItem key={category.id} value={String(category.id)}>
-                  {category.name}
+                <SelectItem key={category.categoryId} value={String(category.categoryId)}>
+                  {category.categoryName}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -334,7 +405,7 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
 
         <div>
           <Label htmlFor="level" className="text-sm font-medium">
-            Level <span className="text-red-500">*</span>
+            Cấp độ <span className="text-red-500">*</span>
           </Label>
           <Select
             value={formData.level || 'BEGINNER'}
@@ -350,12 +421,12 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
                   : ''
               }
             >
-              <SelectValue placeholder="Select a level" />
+              <SelectValue placeholder="Chọn cấp độ" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="BEGINNER">Beginner</SelectItem>
-              <SelectItem value="INTERMEDIATE">Intermediate</SelectItem>
-              <SelectItem value="ADVANCED">Advanced</SelectItem>
+              <SelectItem value="BEGINNER">Cơ bản</SelectItem>
+              <SelectItem value="INTERMEDIATE">Trung cấp</SelectItem>
+              <SelectItem value="ADVANCED">Nâng cao</SelectItem>
             </SelectContent>
           </Select>
           {errors.level && touched.level && (
@@ -365,7 +436,7 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
 
         <div>
           <Label className="text-sm font-medium">
-            Instruction Language <span className="text-red-500">*</span>
+            Ngôn ngữ giảng dạy <span className="text-red-500">*</span>
           </Label>
           <Select
             value={formData.language || 'English'}
@@ -381,12 +452,12 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
                   : ''
               }
             >
-              <SelectValue placeholder="Select a language" />
+              <SelectValue placeholder="Chọn ngôn ngữ" />
             </SelectTrigger>
             <SelectContent>
               {languages.map((lang) => (
                 <SelectItem key={lang.id} value={lang.name}>
-                  {lang.name}
+                  {lang.displayName}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -399,7 +470,7 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="duration" className="text-sm font-medium">
-              Duration (hours) <span className="text-red-500">*</span>
+              Thời lượng (giờ) <span className="text-red-500">*</span>
             </Label>
             <Input
               id="duration"
@@ -411,7 +482,7 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
                 handleChange('duration', Number(e.target.value))
               }
               onBlur={() => handleBlur('duration')}
-              placeholder="e.g., 40"
+              placeholder="VD: 40"
               className={
                 errors.duration && touched.duration
                   ? 'border-red-500'
@@ -427,7 +498,7 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
 
           <div>
             <Label htmlFor="price" className="text-sm font-medium">
-              Price (VND) <span className="text-red-500">*</span>
+              Giá (VND) <span className="text-red-500">*</span>
             </Label>
             <Input
               id="price"
@@ -440,7 +511,7 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
                 handleChange('price', Number(e.target.value))
               }
               onBlur={() => handleBlur('price')}
-              placeholder="e.g., 1500000"
+              placeholder="VD: 1500000"
               className={
                 errors.price && touched.price ? 'border-red-500' : ''
               }
@@ -453,7 +524,7 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
 
         <div>
           <Label htmlFor="thumbnailURL-url" className="text-sm font-medium">
-            Thumbnail <span className="text-red-500">*</span>
+            Ảnh bìa <span className="text-red-500">*</span>
           </Label>
           <Input
             id="thumbnailURL-url"
@@ -467,19 +538,19 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
             }
           />
           <p className="text-xs text-gray-500 mt-1">
-            Enter a valid image URL (JPG, PNG, or other web-supported formats)
+            Định dạng hỗ trợ: JPG, PNG, WEBP, GIF
           </p>
 
           {thumbnailURLPreview && (
             <div className="relative mt-3 rounded-lg overflow-hidden border border-gray-200">
               <img
                 src={thumbnailURLPreview}
-                alt="thumbnailURL preview"
+                alt="Xem trước ảnh bìa"
                 className="w-full h-48 object-cover"
                 onError={() => {
                   setErrors((prev) => ({
                     ...prev,
-                    thumbnailURL: 'Unable to load image from URL',
+                    thumbnailURL: 'Không thể tải hình ảnh từ URL',
                   }));
                 }}
               />
@@ -500,7 +571,9 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
       </div>
 
       <div className="flex justify-end pt-6">
-        <Button type="submit">Next: Course Content</Button>
+        <Button type="submit" disabled={!isFormValid()}>
+          Tiếp theo
+        </Button>
       </div>
     </form>
   );

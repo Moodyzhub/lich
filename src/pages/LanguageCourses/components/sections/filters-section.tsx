@@ -47,18 +47,18 @@ const FiltersSection = ({
                     {/* FILTER LABEL */}
                     <div className="flex items-center gap-2 shrink-0">
                         <Filter className="w-5 h-5 text-gray-600" />
-                        <span className="font-medium text-gray-700">Filters:</span>
+                        <span className="font-medium text-gray-700">Bộ lọc:</span>
                     </div>
 
                     {/* CATEGORY */}
                     <div className="flex items-center gap-2 shrink-0">
-                        <label className="text-sm font-medium text-gray-600">Category:</label>
+                        <label className="text-sm font-medium text-gray-600">Danh mục:</label>
                         <select
                             value={selectedCategory}
                             onChange={(e) => onCategoryChange(e.target.value)}
                             className="border border-gray-300 rounded-lg px-4 py-2 bg-white"
                         >
-                            <option value="All">All Categories</option>
+                            <option value="All">Tất cả danh mục</option>
                             {categories.map((cat) => (
                                 <option key={cat} value={cat}>
                                     {cat}
@@ -69,23 +69,23 @@ const FiltersSection = ({
 
                     {/* LEVEL */}
                     <div className="flex items-center gap-2 shrink-0">
-                        <label className="text-sm font-medium text-gray-600">Level:</label>
+                        <label className="text-sm font-medium text-gray-600">Cấp độ:</label>
 
                         <select
                             value={selectedLevel}
                             onChange={(e) => onLevelChange(e.target.value)}
                             className="border border-gray-300 rounded-lg px-4 py-2 bg-white"
                         >
-                            <option value="All">All Levels</option>
-                            <option value="BEGINNER">Beginner</option>
-                            <option value="INTERMEDIATE">Intermediate</option>
-                            <option value="ADVANCED">Advanced</option>
+                            <option value="All">Tất cả cấp độ</option>
+                            <option value="BEGINNER">Cơ bản</option>
+                            <option value="INTERMEDIATE">Trung cấp</option>
+                            <option value="ADVANCED">Nâng cao</option>
                         </select>
                     </div>
 
                     {/* ⭐ RATING */}
                     <div className="flex items-center gap-2 shrink-0">
-                        <label className="text-sm font-medium text-gray-600">Rating:</label>
+                        <label className="text-sm font-medium text-gray-600">Đánh giá:</label>
 
                         <div className="flex items-center gap-1">
                             {[1, 2, 3, 4, 5].map((star) => {
@@ -114,7 +114,7 @@ const FiltersSection = ({
                     {/* PRICE RANGE */}
                     <div className="flex flex-col shrink-0">
                         <label className="text-sm font-medium text-gray-600">
-                            Price Range (₫)
+                            Khoảng giá (₫)
                         </label>
 
                         <div className="flex items-center gap-4 w-[260px] mt-1">
@@ -160,7 +160,7 @@ const FiltersSection = ({
                             className="flex items-center gap-1 text-sm px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100"
                         >
                             <RotateCcw className="w-4 h-4" />
-                            Reset
+                            Đặt lại
                         </button>
                     </div>
                 </div>
@@ -170,7 +170,7 @@ const FiltersSection = ({
                 {/* ========================== */}
                 <div className="flex justify-center mt-4">
                     <div className="text-sm text-gray-600 font-medium">
-                        {courseCount} courses found
+                        Tìm thấy {courseCount} khóa học
                     </div>
                 </div>
 

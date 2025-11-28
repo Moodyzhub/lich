@@ -41,9 +41,9 @@ export const useDeleteUser = () => {
       
       console.log('✅ useDeleteUser: User deleted successfully');
     } catch (err: any) {
-      const errorMessage = err.message || 'Failed to delete user';
+      const errorMessage = err.message || 'Failed to deactivate user';
       setError(errorMessage);
-      console.error('❌ useDeleteUser: Error deleting user:', errorMessage);
+      console.error('❌ useDeleteUser: Error deactivating user:', errorMessage);
       
       // Rollback optimistic update - restore user in UI
       if (onRollback && userToDelete) {

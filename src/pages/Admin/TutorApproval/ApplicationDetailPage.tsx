@@ -27,6 +27,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { tutorApprovalApi } from './api';
 import { Application } from './types';
+import { ROUTES } from '@/constants/routes';
 
 export default function ApplicationDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -55,13 +56,13 @@ export default function ApplicationDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tutor-applications'] });
       queryClient.invalidateQueries({ queryKey: ['tutor-application', id] });
-      setSuccessMessage('✅ Application approved successfully!');
+      setSuccessMessage('✅ Đã phê duyệt đơn đăng ký thành công!');
       setTimeout(() => {
-        navigate('/admin/tutor-approval');
+        navigate(ROUTES.ADMIN_TUTOR_APPROVAL);
       }, 2000);
     },
     onError: (error: any) => {
-      setErrorMessage(error.message || 'Failed to approve application');
+      setErrorMessage(error.message || 'Không thể phê duyệt đơn đăng ký');
       setTimeout(() => setErrorMessage(null), 4000);
     },
   });
@@ -72,31 +73,31 @@ export default function ApplicationDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tutor-applications'] });
       queryClient.invalidateQueries({ queryKey: ['tutor-application', id] });
-      setSuccessMessage('✅ Application rejected successfully!');
+      setSuccessMessage('✅ Đã từ chối đơn đăng ký thành công!');
       setTimeout(() => {
-        navigate('/admin/tutor-approval');
+        navigate(ROUTES.ADMIN_TUTOR_APPROVAL);
       }, 2000);
     },
     onError: (error: any) => {
-      setErrorMessage(error.message || 'Failed to reject application');
+      setErrorMessage(error.message || 'Không thể từ chối đơn đăng ký');
       setTimeout(() => setErrorMessage(null), 4000);
     },
   });
 
   const handleApprove = () => {
-    if (window.confirm('Are you sure you want to approve this application?')) {
+    if (window.confirm('Bạn có chắc chắn muốn phê duyệt đơn đăng ký này?')) {
       approveMutation.mutate();
     }
   };
 
   const handleReject = () => {
     if (!rejectionReason.trim()) {
-      setErrorMessage('Please provide a reason for rejection');
+      setErrorMessage('Vui lòng nhập lý do từ chối');
       setTimeout(() => setErrorMessage(null), 3000);
       return;
     }
     
-    if (window.confirm('Are you sure you want to reject this application?')) {
+    if (window.confirm('Bạn có chắc chắn muốn từ chối đơn đăng ký này?')) {
       rejectMutation.mutate(rejectionReason);
     }
   };
@@ -108,9 +109,15 @@ export default function ApplicationDetailPage() {
       rejected: 'bg-red-100 text-red-800 border-red-300',
     };
 
+    const labels = {
+      pending: 'Đang chờ',
+      approved: 'Đã duyệt',
+      rejected: 'Từ chối',
+    };
+
     return (
       <Badge className={`${variants[status]} text-sm px-3 py-1 border`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {labels[status]}
       </Badge>
     );
   };
@@ -130,7 +137,7 @@ export default function ApplicationDetailPage() {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-indigo-600 mx-auto mb-4" />
-          <p className="text-gray-700 font-semibold">Loading application details...</p>
+          <p className="text-gray-700 font-semibold">Đang tải thông tin đơn đăng ký...</p>
         </div>
       </div>
     );
@@ -143,13 +150,13 @@ export default function ApplicationDetailPage() {
           <CardContent className="pt-6">
             <div className="text-center">
               <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Error Loading Application</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Lỗi tải đơn đăng ký</h3>
               <p className="text-gray-600 mb-4">
-                {(error as Error)?.message || 'Application not found'}
+                {(error as Error)?.message || 'Không tìm thấy đơn đăng ký'}
               </p>
-              <Button onClick={() => navigate('/admin/tutor-approval')}>
+              <Button onClick={() => navigate(ROUTES.ADMIN_TUTOR_APPROVAL)}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to List
+                Quay lại danh sách
               </Button>
             </div>
           </CardContent>
@@ -167,16 +174,16 @@ export default function ApplicationDetailPage() {
         <div className="max-w-7xl mx-auto">
           <Button
             variant="ghost"
-            onClick={() => navigate('/admin/tutor-approval')}
+            onClick={() => navigate(ROUTES.ADMIN_TUTOR_APPROVAL)}
             className="text-white hover:bg-white/20 mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Applications
+            Quay lại danh sách
           </Button>
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-4xl font-bold mb-2">Application Details</h1>
-              <p className="text-blue-100 text-lg">Review tutor application information</p>
+              <h1 className="text-4xl font-bold mb-2">Chi tiết đơn đăng ký</h1>
+              <p className="text-blue-100 text-lg">Xem xét thông tin đăng ký làm gia sư</p>
             </div>
             {getStatusBadge(application.status)}
           </div>
@@ -217,7 +224,7 @@ export default function ApplicationDetailPage() {
               <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
                 <CardTitle className="flex items-center text-indigo-900">
                   <User className="w-5 h-5 mr-2" />
-                  Applicant Information
+                  Thông tin người đăng ký
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-6 space-y-4">
@@ -225,7 +232,7 @@ export default function ApplicationDetailPage() {
                   <div className="space-y-2">
                     <div className="flex items-center text-gray-600">
                       <User className="h-4 w-4 mr-2" />
-                      <span className="text-sm font-medium">Full Name</span>
+                      <span className="text-sm font-medium">Họ và tên</span>
                     </div>
                     <p className="text-lg font-semibold text-gray-900">
                       {application.applicantName}
@@ -269,7 +276,7 @@ export default function ApplicationDetailPage() {
                   <div className="space-y-2">
                     <div className="flex items-center text-gray-600">
                       <Calendar className="h-4 w-4 mr-2" />
-                      <span className="text-sm font-medium">Applied Date</span>
+                      <span className="text-sm font-medium">Ngày đăng ký</span>
                     </div>
                     <p className="text-lg font-semibold text-gray-900">
                       {formatDate(application.appliedDate)}
@@ -279,10 +286,10 @@ export default function ApplicationDetailPage() {
                   <div className="space-y-2">
                     <div className="flex items-center text-gray-600">
                       <Briefcase className="h-4 w-4 mr-2" />
-                      <span className="text-sm font-medium">Experience</span>
+                      <span className="text-sm font-medium">Kinh nghiệm</span>
                     </div>
                     <p className="text-lg font-semibold text-gray-900">
-                      {application.experience} years
+                      {application.experience} năm
                     </p>
                   </div>
 
@@ -290,7 +297,7 @@ export default function ApplicationDetailPage() {
                     <div className="space-y-2">
                       <div className="flex items-center text-gray-600">
                         <DollarSign className="h-4 w-4 mr-2" />
-                        <span className="text-sm font-medium">Price Per Hour</span>
+                        <span className="text-sm font-medium">Giá mỗi giờ</span>
                       </div>
                       <p className="text-lg font-semibold text-gray-900">
                         ${application.pricePerHour}
@@ -306,14 +313,14 @@ export default function ApplicationDetailPage() {
               <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
                 <CardTitle className="flex items-center text-indigo-900">
                   <Languages className="w-5 h-5 mr-2" />
-                  Teaching Information
+                  Thông tin giảng dạy
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-6 space-y-6">
                 <div className="space-y-2">
                   <Label className="text-sm text-gray-600 flex items-center">
                     <Languages className="h-4 w-4 mr-2" />
-                    Teaching Languages
+                    Ngôn ngữ giảng dạy
                   </Label>
                   <div className="flex flex-wrap gap-2">
                     {application.teachingLanguages.map((lang, index) => (
@@ -333,7 +340,7 @@ export default function ApplicationDetailPage() {
                 <div className="space-y-2">
                   <Label className="text-sm text-gray-600 flex items-center">
                     <Award className="h-4 w-4 mr-2" />
-                    Specialization
+                    Chuyên môn
                   </Label>
                   <p className="text-base text-gray-900 font-medium">
                     {application.specialization}
@@ -345,7 +352,7 @@ export default function ApplicationDetailPage() {
                 <div className="space-y-2">
                   <Label className="text-sm text-gray-600 flex items-center">
                     <FileText className="h-4 w-4 mr-2" />
-                    Bio
+                    Giới thiệu
                   </Label>
                   <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                     <p className="text-base text-gray-700 leading-relaxed whitespace-pre-wrap">
@@ -362,7 +369,7 @@ export default function ApplicationDetailPage() {
                 <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
                   <CardTitle className="flex items-center text-indigo-900">
                     <Award className="w-5 h-5 mr-2" />
-                    Certificates
+                    Chứng chỉ
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6">
@@ -383,7 +390,7 @@ export default function ApplicationDetailPage() {
                               rel="noopener noreferrer"
                               className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium transition-colors text-sm"
                             >
-                              View Certificate
+                              Xem chứng chỉ
                               <ExternalLink className="h-4 w-4 ml-1" />
                             </a>
                           </div>
@@ -405,7 +412,7 @@ export default function ApplicationDetailPage() {
               {application.status === 'pending' && (
                 <Card className="shadow-lg border-indigo-200">
                   <CardHeader className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white">
-                    <CardTitle className="text-lg">Review Actions</CardTitle>
+                    <CardTitle className="text-lg">Hành động xét duyệt</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-6 space-y-4">
                     {!showRejectForm ? (
@@ -418,12 +425,12 @@ export default function ApplicationDetailPage() {
                           {approveMutation.isPending ? (
                             <>
                               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                              Approving...
+                              Đang phê duyệt...
                             </>
                           ) : (
                             <>
                               <CheckCircle className="w-5 h-5 mr-2" />
-                              Approve Application
+                              Phê duyệt đơn đăng ký
                             </>
                           )}
                         </Button>
@@ -435,18 +442,18 @@ export default function ApplicationDetailPage() {
                           className="w-full font-semibold py-6 text-lg"
                         >
                           <XCircle className="w-5 h-5 mr-2" />
-                          Reject Application
+                          Từ chối đơn đăng ký
                         </Button>
                       </>
                     ) : (
                       <div className="space-y-4">
                         <div className="space-y-2">
                           <Label htmlFor="rejectionReason" className="text-red-700 font-semibold">
-                            Rejection Reason *
+                            Lý do từ chối *
                           </Label>
                           <Textarea
                             id="rejectionReason"
-                            placeholder="Please provide a detailed reason for rejection..."
+                            placeholder="Vui lòng nhập lý do từ chối chi tiết..."
                             rows={6}
                             value={rejectionReason}
                             onChange={(e) => setRejectionReason(e.target.value)}
@@ -454,7 +461,7 @@ export default function ApplicationDetailPage() {
                             disabled={isProcessing}
                           />
                           <p className="text-xs text-gray-600">
-                            This reason will be sent to the applicant
+                            Lý do này sẽ được gửi cho người đăng ký
                           </p>
                         </div>
 
@@ -467,12 +474,12 @@ export default function ApplicationDetailPage() {
                           {rejectMutation.isPending ? (
                             <>
                               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                              Rejecting...
+                              Đang từ chối...
                             </>
                           ) : (
                             <>
                               <XCircle className="w-5 h-5 mr-2" />
-                              Confirm Rejection
+                              Xác nhận từ chối
                             </>
                           )}
                         </Button>
@@ -486,7 +493,7 @@ export default function ApplicationDetailPage() {
                           variant="outline"
                           className="w-full"
                         >
-                          Cancel
+                          Hủy
                         </Button>
                       </div>
                     )}
@@ -530,32 +537,6 @@ export default function ApplicationDetailPage() {
                 </Card>
               )}
 
-              {/* Application Info */}
-              <Card className="shadow-lg border-gray-200">
-                <CardHeader className="bg-gray-50">
-                  <CardTitle className="text-lg">Application Info</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6 space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Application ID:</span>
-                    <span className="font-semibold text-gray-900">#{application.verificationId}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">User ID:</span>
-                    <span className="font-semibold text-gray-900">#{application.userId}</span>
-                  </div>
-                  {application.tutorId && application.tutorId > 0 && (
-                    <>
-                      <Separator />
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Tutor ID:</span>
-                        <span className="font-semibold text-gray-900">#{application.tutorId}</span>
-                      </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
             </div>
           </div>
         </div>

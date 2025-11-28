@@ -8,7 +8,6 @@ export const coursesApi = {
       const response = await axios.get('/admin/courses');
       return response?.data?.result || response?.data || [];
     } catch (error: any) {
-      console.error('❌ Error fetching all courses:', error);
       throw new Error(
         error?.response?.data?.message || 
         error.message || 
@@ -25,7 +24,6 @@ export const coursesApi = {
       });
       return response?.data?.result || response?.data || [];
     } catch (error: any) {
-      console.error('❌ Error fetching courses by status:', error);
       throw new Error(
         error?.response?.data?.message || 
         error.message || 
@@ -55,7 +53,6 @@ export const coursesApi = {
         section: data.sections || data.section || [], // Map sections field
       };
     } catch (error: any) {
-      console.error('❌ Error fetching course detail:', error);
       throw new Error(
         error?.response?.data?.message || 
         error.message || 
@@ -73,7 +70,6 @@ export const coursesApi = {
       const courses = response?.data?.result || response?.data || [];
       return Array.isArray(courses) ? courses.length : 0;
     } catch (error: any) {
-      console.error('❌ Error fetching pending count:', error);
       return 0;
     }
   },
@@ -84,7 +80,6 @@ export const coursesApi = {
       const payload = note ? { note } : {};
       await axios.post(`/admin/courses/${courseId}/approve`, payload);
     } catch (error: any) {
-      console.error('❌ Error approving course:', error);
       throw new Error(
         error?.response?.data?.message || 
         error.message || 
@@ -98,7 +93,6 @@ export const coursesApi = {
     try {
       await axios.post(`/admin/courses/${courseId}/reject`, { note });
     } catch (error: any) {
-      console.error('❌ Error rejecting course:', error);
       throw new Error(
         error?.response?.data?.message || 
         error.message || 
@@ -112,7 +106,6 @@ export const coursesApi = {
     try {
       await axios.put(`/admin/courses/${courseId}/review-note`, { note });
     } catch (error: any) {
-      console.error('❌ Error updating review note:', error);
       throw new Error(
         error?.response?.data?.message || 
         error.message || 

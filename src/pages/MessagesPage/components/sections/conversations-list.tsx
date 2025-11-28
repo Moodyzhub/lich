@@ -20,7 +20,7 @@ interface MyInfo {
 interface ChatRoomMessage {
   messageID: number;
   content: string;
-  messageType: string; // "Text", "Link", etc.
+  messageType: string;
   createdAt: string;
 }
 
@@ -69,7 +69,19 @@ const ConversationsList = ({
           ),
         }));
 
-        setRooms(normalized);
+        // Sort rooms by latest message time (newest first)
+        const sortedRooms = normalized.sort((a: ChatRoom, b: ChatRoom) => {
+          const aLastMsg = a.messages[a.messages.length - 1];
+          const bLastMsg = b.messages[b.messages.length - 1];
+          
+          if (!aLastMsg && !bLastMsg) return 0;
+          if (!aLastMsg) return 1;
+          if (!bLastMsg) return -1;
+          
+          return new Date(bLastMsg.createdAt).getTime() - new Date(aLastMsg.createdAt).getTime();
+        });
+
+        setRooms(sortedRooms);
       } catch (err) {
         console.error("Error loading chat rooms:", err);
       } finally {
@@ -86,7 +98,7 @@ const ConversationsList = ({
   if (!myInfo) {
     return (
         <div className="p-4 text-center text-gray-500 border-r h-full">
-          Loading...
+          Đang tải...
         </div>
     );
   }
@@ -106,7 +118,7 @@ const ConversationsList = ({
       };
     }
 
-    // fallback
+
     return {
       name: room.userName,
       avatar: room.userAvatarURL,
@@ -134,36 +146,42 @@ const ConversationsList = ({
         }
       }
     } catch {
+      // Not JSON, continue
+    }
 
+    // Check if content is base64 image
+    if (content.startsWith("data:image/")) {
+      return "📷 Hình ảnh";
+    }
+
+    // Check if content is base64 file/document
+    if (content.startsWith("data:application/") || content.startsWith("data:")) {
+      return "📎 Tệp";
     }
 
     if (type === "Link") {
-      return (
-          <a
-              href={content}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 underline break-words"
-          >
-            {content}
-          </a>
-      );
+      return "🔗 Liên kết";
     }
 
-    return <p className="whitespace-pre-wrap break-words text-sm">{content}</p>;
+    // Regular text - truncate if too long
+    if (content.length > 50) {
+      return content.substring(0, 50) + "...";
+    }
+
+    return content;
   };
 
 
   return (
-      <div className="border-r border-gray-200 flex flex-col h-full bg-[#F0F9FF]">
+      <div className="border-r border-gray-200 flex flex-col h-full max-h-full bg-[#F0F9FF] overflow-hidden">
         {/* HEADER */}
-        <div className="p-4 border-b border-blue-100 bg-white/80 backdrop-blur-sm">
-          <h2 className="text-xl font-bold mb-4 text-blue-900">Messages</h2>
+        <div className="p-4 border-b border-blue-100 bg-white/80 backdrop-blur-sm flex-shrink-0">
+          <h2 className="text-xl font-bold mb-4 text-blue-900">Tin nhắn</h2>
 
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 w-4 h-4" />
             <Input
-                placeholder="Search conversations..."
+                placeholder="Tìm kiếm cuộc trò chuyện..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 bg-white border-blue-200 focus:ring-blue-300"
@@ -171,17 +189,17 @@ const ConversationsList = ({
           </div>
         </div>
 
-        {/* LIST */}
-        <div className="flex-1 overflow-y-auto">
+        {/* LIST - Will scroll when content exceeds available height */}
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-300 scrollbar-track-blue-50">
           {loading && (
               <div className="p-4 text-center text-blue-500">
-                Loading conversations...
+                Đang tải cuộc trò chuyện...
               </div>
           )}
 
           {!loading && filteredRooms.length === 0 && (
               <div className="p-4 text-center text-gray-500">
-                No conversations found.
+                Không tìm thấy cuộc trò chuyện.
               </div>
           )}
 
@@ -191,7 +209,9 @@ const ConversationsList = ({
                     getRoomDisplay(room);
 
                 const lastMessage = room.messages[room.messages.length - 1];
-                const lastMsgText = renderMessageContent(lastMessage || { content: "No messages yet", messageType: "Text", createdAt: "" });
+                const lastMsgText = lastMessage 
+                    ? renderMessageContent(lastMessage)
+                    : "Chưa có tin nhắn";
                 const lastMsgTime = lastMessage
                     ? new Date(lastMessage.createdAt).toLocaleString()
                     : "—";
@@ -209,16 +229,22 @@ const ConversationsList = ({
                                 : "hover:bg-blue-50 hover:shadow-sm"
                         }`}
                     >
-                      <div className="flex items-start space-x-3">
-                        <Avatar className="border border-blue-300 shadow-sm">
-                          <AvatarImage src={displayAvatar || ""} alt={displayName} />
-                          <AvatarFallback className="bg-blue-200 text-blue-700 font-bold">
-                            {displayName
-                                ?.split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                          </AvatarFallback>
-                        </Avatar>
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0" style={{ minWidth: '48px', width: '48px', height: '48px' }}>
+                          <Avatar className="border border-blue-300 shadow-sm" style={{ width: '48px', height: '48px' }}>
+                            <AvatarImage 
+                              src={displayAvatar || ""} 
+                              alt={displayName}
+                              className="object-cover"
+                            />
+                            <AvatarFallback className="bg-blue-200 text-blue-700 font-bold text-sm">
+                              {displayName
+                                  ?.split(" ")
+                                  .map((n) => n[0])
+                                  .join("")}
+                            </AvatarFallback>
+                          </Avatar>
+                        </div>
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
@@ -236,7 +262,7 @@ const ConversationsList = ({
 
                           {hasBooking && (
                               <span className="text-xs bg-blue-200 text-blue-700 px-2 py-1 rounded-full mt-1 inline-block">
-                                Booked
+                                Đã đặt lịch
                               </span>
                           )}
                         </div>

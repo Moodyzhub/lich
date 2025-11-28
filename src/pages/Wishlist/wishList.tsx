@@ -50,8 +50,8 @@ const Wishlist = () => {
       if (!token) {
         toast({
           variant: "destructive",
-          title: "You are not logged in",
-          description: "Please login to view your wishlist.",
+          title: "Bạn chưa đăng nhập",
+          description: "Vui lòng đăng nhập để xem danh sách yêu thích.",
         });
 
         navigate(ROUTES.SIGN_IN);
@@ -71,8 +71,8 @@ const Wishlist = () => {
       } catch {
         toast({
           variant: "destructive",
-          title: "Failed to load wishlist",
-          description: "Please try again later.",
+          title: "Không thể tải danh sách yêu thích",
+          description: "Vui lòng thử lại sau.",
         });
 
         navigate(ROUTES.SIGN_IN);
@@ -92,8 +92,8 @@ const Wishlist = () => {
     if (!token) {
       toast({
         variant: "destructive",
-        title: "You are not logged in",
-        description: "Please login to remove items.",
+        title: "Bạn chưa đăng nhập",
+        description: "Vui lòng đăng nhập để xóa mục.",
       });
 
       navigate(ROUTES.SIGN_IN);
@@ -108,13 +108,13 @@ const Wishlist = () => {
 
       toast({
         variant: "success",
-        title: "Removed from wishlist",
+        title: "Đã xóa khỏi danh sách yêu thích",
       });
     } catch {
       toast({
         variant: "destructive",
-        title: "Failed to remove",
-        description: "Please try again later.",
+        title: "Xóa thất bại",
+        description: "Vui lòng thử lại sau.",
       });
     }
   };
@@ -140,7 +140,7 @@ const Wishlist = () => {
 
   return loading ? (
       <div className="min-h-screen flex justify-center items-center text-lg text-gray-500">
-        Loading your wishlist...
+        Đang tải danh sách yêu thích...
       </div>
   ) : (
       <div className="min-h-screen bg-gray-50">

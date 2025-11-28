@@ -37,6 +37,9 @@ import ApplyTutor from '@/pages/ApplyTutor';
 import TutorApproval from '@/pages/Admin/TutorApproval';
 import ApplicationDetailPage from '@/pages/Admin/TutorApproval/ApplicationDetailPage';
 import UserManagement from '@/pages/Admin/UserManagement';
+import AdminWithdrawRequests from '@/pages/Admin/WithdrawRequests';
+import AdminCommissionSettings from '@/pages/Admin/CommissionSettings';
+import AdminRefundManagement from '@/pages/Admin/RefundManagement/Refund.tsx';
 import EditCourse from '@/pages/TutorPages/EditCourse';
 import CourseList from '@/pages/TutorPages/CourseList';
 import TutorDashboardLayout from '@/components/layout/tutor/TutorDashboardLayout';
@@ -48,13 +51,19 @@ import TutorDashboard from '@/pages/TutorPages/Dashboard';
 import TutorStudents from '@/pages/TutorPages/Students';
 import TutorSchedule from '@/pages/TutorPages/Schedule';
 import TutorMessages from '@/pages/TutorPages/Messages';
-import TutorResources from '@/pages/TutorPages/Resources';
-import TutorPayment from  '@/pages/TutorPages/Payment';
-import TutorSettings from '@/pages/TutorPages/Settings';
+// import TutorResources from '@/pages/TutorPages/Resources';
+import TutorPayment from '@/pages/TutorPages/Payment';
+// import TutorSettings from '@/pages/TutorPages/Settings';
 import TutorPackages from '@/pages/TutorPages/Packages';
 import TutorCourseDetailPage from '@/pages/TutorPages/CourseDetail';
+import TutorWithdrawal from '@/pages/TutorPages/Withdrawal';
+import TutorWithdrawalHistory from '@/pages/TutorPages/WithdrawalHistory';
+import BookedSlots from '@/pages/TutorPages/BookedSlots';
 import Messages from '@/pages/MessagesPage/boxchat.tsx';
 import BookTutor from '@/pages/BookTutor/book-tutor.tsx';
+import MyBookings from "@/pages/MyBookings/my-booking.tsx";
+import RefundRequests from "@/pages/RefundRequests/refund-requests.tsx";
+import Notifications from "@/pages/Notifications/notifications.tsx";
 
 export function AppRoutes() {
     return (
@@ -74,6 +83,7 @@ export function AppRoutes() {
             <Route path={ROUTES.LANGUAGES} element={<Languages />} />
             <Route path={ROUTES.TUTORS} element={<Tutors />} />
             <Route path={ROUTES.TUTOR_DETAIL} element={<TutorDetail />} />
+            {/* Course detail MUST be before tutor /courses route */}
             <Route path={ROUTES.COURSE_DETAIL} element={<CourseDetail />} />
             <Route path={ROUTES.LESSON_DETAIL} element={<LessonDetail />} />
             <Route path={ROUTES.LANGUAGE_COURSES} element={<LanguageCourses />} />
@@ -82,10 +92,12 @@ export function AppRoutes() {
             <Route path={ROUTES.WISHLIST} element={<Wishlist />} />
             <Route path={ROUTES.PAYMENT} element={<Payment />} />
             <Route path={ROUTES.POLICY} element={<PolicyPage />} />
-            <Route path="/messages" element={<Messages />} />
-            <Route path="/messages/:conversationId" element={<Messages />} />
-            <Route path="/book-tutor/:tutorId" element={<BookTutor />} />
-
+            <Route path={ROUTES.MESSAGES} element={<Messages />} />
+            <Route path={ROUTES.MESSAGES_CONVERSATION} element={<Messages />} />
+            <Route path={ROUTES.BOOK_TUTOR} element={<BookTutor />} />
+            <Route path={ROUTES.MY_BOOKINGS} element={<MyBookings />} />
+            <Route path={ROUTES.REFUND_REQUESTS} element={<RefundRequests />} />
+            <Route path={ROUTES.NOTIFICATIONS} element={<Notifications />} />
             {/* User */}
             <Route path={ROUTES.PROFILE} element={<Profile />} />
             <Route path={ROUTES.CHANGE_PASSWORD} element={<ChangePassword />} />
@@ -94,37 +106,43 @@ export function AppRoutes() {
             <Route path={ROUTES.APPLY_TUTOR} element={<ApplyTutor />} />
 
             {/* Admin Dashboard with Layout */}
-            <Route path="/admin" element={<AdminLayout />}>
+            <Route path={ROUTES.ADMIN} element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />
-                <Route path="dashboard" element={<AdminDashboard />} />
-                <Route path="courses" element={<AdminCourses />} />
-                <Route path="courses/:courseId" element={<CoursesDetailPage />} />
-                <Route path="course-approval" element={<CourseApprovalPage />} />
-                <Route path="course-approval/:courseId" element={<CourseApprovalDetailPage />} />
-                <Route path="course-approval/drafts" element={<DraftListPage />} />
-                <Route path="course-approval/drafts/:draftId" element={<DraftDetailPage />} />
-                <Route path="tutor-approval" element={<TutorApproval />} />
-                <Route path="tutor-approval/:id" element={<ApplicationDetailPage />} />
-                <Route path="user-management" element={<UserManagement />} />
-                <Route path="payments" element={<AdminPayments />} />
+                <Route path={ROUTES.ADMIN_DASHBOARD} element={<AdminDashboard />} />
+                <Route path={ROUTES.ADMIN_COURSES} element={<AdminCourses />} />
+                <Route path={ROUTES.ADMIN_COURSE_DETAIL} element={<CoursesDetailPage />} />
+                <Route path={ROUTES.ADMIN_COURSE_APPROVAL} element={<CourseApprovalPage />} />
+                <Route path={ROUTES.ADMIN_COURSE_APPROVAL_DETAIL} element={<CourseApprovalDetailPage />} />
+                <Route path={ROUTES.ADMIN_COURSE_APPROVAL_DRAFTS} element={<DraftListPage />} />
+                <Route path={ROUTES.ADMIN_COURSE_APPROVAL_DRAFT_DETAIL} element={<DraftDetailPage />} />
+                <Route path={ROUTES.ADMIN_TUTOR_APPROVAL} element={<TutorApproval />} />
+                <Route path={ROUTES.ADMIN_TUTOR_APPROVAL_DETAIL} element={<ApplicationDetailPage />} />
+                <Route path={ROUTES.ADMIN_USER_MANAGEMENT} element={<UserManagement />} />
+                <Route path={ROUTES.ADMIN_PAYMENTS} element={<AdminPayments />} />
+                <Route path={ROUTES.ADMIN_WITHDRAW_REQUESTS} element={<AdminWithdrawRequests />} />
+                <Route path={ROUTES.ADMIN_COMMISSION_SETTINGS} element={<AdminCommissionSettings />} />
+                <Route path={ROUTES.ADMIN_REFUND_MANAGEMENT} element={<AdminRefundManagement />} />
             </Route>
-            
+
             {/* Tutor Dashboard with Layout */}
             <Route element={<TutorDashboardLayout />}>
-            <Route path="/dashboard" element={<TutorDashboard />} />
-            <Route path="/courses" element={<CourseList />} />
-            <Route path="/courses/:courseId/details" element={<TutorCourseDetailPage />} />
-            <Route path="/courses/:courseId/content" element={<EditCourse />} />
-            <Route path="/courses/:courseId/draft/:draftId/content" element={<EditCourse />} />
-            <Route path="/create-courses" element={<CreateCourse />} />
-            <Route path="/students" element={<TutorStudents />} />
-            <Route path="/schedule" element={<TutorSchedule />} />
-            <Route path="/packages" element={<TutorPackages />} />
-            <Route path="/payments" element={<TutorPayment />} />
-            <Route path="/messages" element={<TutorMessages />} />
-            <Route path="/resources" element={<TutorResources />} />
-            <Route path="/settings" element={<TutorSettings />} />
-        </Route>
+                <Route path={ROUTES.TUTOR_DASHBOARD} element={<TutorDashboard />} />
+                <Route path={ROUTES.TUTOR_COURSES} element={<CourseList />} />
+                <Route path={ROUTES.TUTOR_COURSE_DETAILS} element={<TutorCourseDetailPage />} />
+                <Route path={ROUTES.TUTOR_COURSE_CONTENT} element={<EditCourse />} />
+                <Route path={ROUTES.TUTOR_COURSE_DRAFT_CONTENT} element={<EditCourse />} />
+                <Route path={ROUTES.CREATE_COURSES} element={<CreateCourse />} />
+                <Route path={ROUTES.TUTOR_STUDENTS} element={<TutorStudents />} />
+                <Route path={ROUTES.TUTOR_SCHEDULE} element={<TutorSchedule />} />
+                <Route path={ROUTES.TUTOR_BOOKED_SLOTS} element={<BookedSlots />} />
+                <Route path={ROUTES.TUTOR_PACKAGES} element={<TutorPackages />} />
+                <Route path={ROUTES.PAYMENTS} element={<TutorPayment />} />
+                <Route path={ROUTES.WITHDRAWAL} element={<TutorWithdrawal />} />
+                <Route path={ROUTES.WITHDRAWAL_HISTORY} element={<TutorWithdrawalHistory />} />
+                <Route path={ROUTES.TUTOR_MESSAGES} element={<TutorMessages />} />
+                {/* <Route path="/resources" element={<TutorResources />} />
+            <Route path="/settings" element={<TutorSettings />} /> */}
+            </Route>
 
 
             {/* Not found */}

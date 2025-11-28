@@ -41,7 +41,7 @@ const PackageManagementPage: React.FC = () => {
       const data = await tutorPackageApi.getMyPackages();
       setPackages(data);
     } catch (err: any) {
-      setError(err.message || 'Không thể tải danh sách package');
+      setError(err.message || 'Không thể tải danh sách gói dịch vụ');
       setPackages([]);
     } finally {
       setIsLoading(false);
@@ -92,7 +92,7 @@ const PackageManagementPage: React.FC = () => {
       setEditingPackage(packageData);
       setCurrentView('form');
     } catch (err: any) {
-      toast.error(err.message || 'Không thể tải thông tin package');
+      toast.error(err.message || 'Không thể tải thông tin gói dịch vụ');
     } finally {
       setIsFormLoading(false);
     }
@@ -118,16 +118,16 @@ const PackageManagementPage: React.FC = () => {
 
       if (formMode === 'create') {
         await tutorPackageApi.createPackage(data);
-        toast.success('Package đã được tạo thành công!');
+        toast.success('Gói dịch vụ đã được tạo thành công!');
       } else if (editingPackage) {
         await tutorPackageApi.updatePackage(editingPackage.packageid, data);
-        toast.success('Package đã được cập nhật thành công!');
+        toast.success('Gói dịch vụ đã được cập nhật thành công!');
       }
 
       handleBackToList();
       await fetchPackages(); // Refresh the list
     } catch (err: any) {
-      toast.error(err.message || 'Không thể lưu package');
+      toast.error(err.message || 'Không thể lưu gói dịch vụ');
     } finally {
       setIsFormLoading(false);
     }
@@ -149,12 +149,12 @@ const PackageManagementPage: React.FC = () => {
     try {
       setIsDeleting(true);
       await tutorPackageApi.deletePackage(deletingPackage.packageid);
-      toast.success('Package đã được xóa thành công!');
+      toast.success('Gói dịch vụ đã được xóa thành công!');
       setShowDeleteDialog(false);
       setDeletingPackage(null);
       await fetchPackages(); // Refresh the list
     } catch (err: any) {
-      toast.error(err.message || 'Không thể xóa package');
+      toast.error(err.message || 'Không thể xóa gói dịch vụ');
     } finally {
       setIsDeleting(false);
     }
@@ -215,10 +215,10 @@ const PackageManagementPage: React.FC = () => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                Quản lý Package
+                Quản lý Gói dịch vụ
               </h1>
               <p className="text-gray-600">
-                Quản lý và theo dõi tất cả các package dịch vụ của bạn
+                Quản lý và theo dõi tất cả các gói dịch vụ của bạn
               </p>
             </div>
             <Button 
@@ -227,7 +227,7 @@ const PackageManagementPage: React.FC = () => {
               className="gap-2 shadow-lg hover:shadow-xl transition-all"
             >
               <Plus className="w-5 h-5" />
-              Thêm Package
+              Thêm gói dịch vụ
             </Button>
           </div>
         </div>
@@ -257,7 +257,7 @@ const PackageManagementPage: React.FC = () => {
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
               <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-              <p className="text-gray-600">Đang tải package...</p>
+              <p className="text-gray-600">Đang tải gói dịch vụ...</p>
             </div>
           </div>
         )}
@@ -270,14 +270,14 @@ const PackageManagementPage: React.FC = () => {
                 <Package className="w-10 h-10 text-blue-600" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                Chưa có package nào
+                Chưa có gói dịch vụ nào
               </h3>
               <p className="text-gray-600 mb-6">
-                Bạn chưa tạo package dịch vụ nào. Hãy tạo package đầu tiên để bắt đầu!
+                Bạn chưa tạo gói dịch vụ nào. Hãy tạo gói dịch vụ đầu tiên để bắt đầu!
               </p>
               <Button onClick={handleCreatePackage} className="gap-2">
                 <Plus className="w-4 h-4" />
-                Tạo package đầu tiên
+                Tạo gói dịch vụ đầu tiên
               </Button>
             </div>
           </Card>

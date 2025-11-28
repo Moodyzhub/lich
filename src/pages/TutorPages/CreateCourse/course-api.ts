@@ -1,7 +1,14 @@
 ﻿import axios from '@/config/axiosConfig';
-import { CATEGORIES, LANGUAGES, type Category, type Language } from '@/constants/categories';
+import { LANGUAGES, type Language } from '@/constants/categories';
 
-export type { Category, Language };
+export type { Language };
+
+// Category type matching API response
+export interface Category {
+  categoryId: number;
+  categoryName: string;
+  description: string;
+}
 
 export interface CourseFormData {
   title: string;
@@ -198,11 +205,104 @@ export const courseApi = {
   },
 
   deleteObjective: async (objectiveId: string): Promise<void> => {
-    await axios.delete<any>(`/courses/objectives/${objectiveId}`);
+    await axios.delete<any>(`/course-objectives/${objectiveId}`);
   },
 };
 
-export const getCategories = (): Category[] => [...CATEGORIES];
+/**
+ * Fetch categories from API
+ * GET /categories
+ */
+export const getCategories = async (): Promise<Category[]> => {
+  try {
+    const response = await axios.get<Category[]>('/categories');
+    // Handle different response formats
+    const categoriesData = response.data || [];
+    return categoriesData;
+  } catch (error) {
+    console.error('Failed to fetch categories:', error);
+    return [];
+  }
+};
+
 export const getLanguages = (): Language[] => [...LANGUAGES];
 
 export default courseApi;
+
+/**
+ * Fetch course detail by ID
+ * GET /tutor/courses/{courseId}
+ */
+export const getCourseDetail = async (courseId: string): Promise<CourseFormData> => {
+  try {
+    const response = await axios.get<any>(`/tutor/courses/${courseId}`);
+    const courseData = response.data?.result || response.data;
+    return {
+      title: courseData.title,
+      shortDescription: courseData.shortDescription,
+      description: courseData.description,
+      requirement: courseData.requirement,
+      level: courseData.level,
+      categoryID: courseData.categoryID,
+      language: courseData.language,
+      duration: courseData.duration,
+      price: courseData.price,
+      thumbnailURL: courseData.thumbnailURL,
+    };
+  } catch (error) {
+    console.error('Failed to fetch course detail:', error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch objectives for a course
+ * GET /courses/{courseId}/objectives
+ */
+export const getObjectives = async (courseId: string): Promise<any[]> => {
+  try {
+    const response = await axios.get<any>(`/courses/${courseId}/objectives`);
+    const objectives = response.data?.result || response.data || [];
+    return objectives;
+  } catch (error) {
+    console.error('Failed to fetch objectives:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetch sections with lessons and resources for a course
+ * GET /tutor/courses/{courseId}/sections
+ */
+export const getSections = async (courseId: string): Promise<SectionData[]> => {
+  try {
+    const response = await axios.get<any>(`/tutor/courses/${courseId}/sections`);
+    const sections = response.data?.result || response.data || [];
+    
+    // Transform API response to match SectionData interface
+    return sections.map((section: any) => ({
+      id: section.sectionID?.toString() || section.id?.toString(),
+      title: section.title,
+      description: section.description,
+      orderIndex: section.orderIndex,
+      lessons: (section.lessons || []).map((lesson: any) => ({
+        id: lesson.lessonID?.toString() || lesson.id?.toString(),
+        title: lesson.title,
+        duration: lesson.duration,
+        lessonType: lesson.lessonType,
+        videoURL: lesson.videoURL,
+        content: lesson.content,
+        orderIndex: lesson.orderIndex,
+        resources: (lesson.resources || []).map((resource: any) => ({
+          id: resource.resourceID?.toString() || resource.id?.toString(),
+          resourceType: resource.resourceType,
+          resourceTitle: resource.resourceTitle,
+          resourceURL: resource.resourceURL,
+        })),
+      })),
+    }));
+  } catch (error) {
+    console.error('Failed to fetch sections:', error);
+    return [];
+  }
+};

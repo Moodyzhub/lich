@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { coursesApi } from './api';
 import { CourseCard, CourseFilters, Pagination } from './components';
 import type { Course, CoursesFilters } from './types';
+import { routeHelpers } from '@/constants/routes';
 
 export default function CoursesPage() {
   const navigate = useNavigate();
@@ -28,7 +29,6 @@ export default function CoursesPage() {
       setCourses(coursesData);
       setFilteredCourses(coursesData);
     } catch (error) {
-      console.error('Error fetching courses:', error);
     } finally {
       setLoading(false);
     }
@@ -37,14 +37,6 @@ export default function CoursesPage() {
   // Apply filters
   useEffect(() => {
     let result = [...courses];
-    
-    console.log('🔍 Applying filters:', {
-      totalCourses: courses.length,
-      filters,
-      hasSearch: !!filters.search,
-      hasCategory: !!filters.category,
-      hasStatus: !!filters.status
-    });
 
     // Search filter
     if (filters.search) {
@@ -88,11 +80,6 @@ export default function CoursesPage() {
         }
       });
     }
-
-    console.log('✅ Filter result:', {
-      filteredCount: result.length,
-      originalCount: courses.length
-    });
     
     setFilteredCourses(result);
     setCurrentPage(1);
@@ -104,7 +91,7 @@ export default function CoursesPage() {
   const paginatedCourses = filteredCourses.slice(startIndex, startIndex + itemsPerPage);
 
   const handleCourseClick = (courseId: string | number) => {
-    navigate(`/admin/courses/${courseId}`);
+    navigate(routeHelpers.adminCourseDetail(courseId));
   };
 
   // Convert Course to PendingCourse format for CourseCard
@@ -130,15 +117,6 @@ export default function CoursesPage() {
       updatedAt: course.updatedAt || new Date().toISOString(),
       isDraft: false,
     };
-    
-    // Debug: Log courses with Draft status
-    if (course.status?.toLowerCase().includes('draft')) {
-      console.log('🔍 Draft course found:', {
-        title: course.title,
-        status: course.status,
-        converted: converted.status
-      });
-    }
     
     return converted;
   };

@@ -71,41 +71,41 @@ const TutorDashboard: React.FC = () => {
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-6 text-white">
         <h1 className="text-3xl font-bold mb-2">
-          Welcome back, {user?.fullName || user?.username}! 👋
+          Chào mừng trở lại, {user?.fullName || user?.username}! 👋
         </h1>
         <p className="text-blue-100">
-          Here's what's happening with your courses today.
+          Đây là những gì đang diễn ra với các khóa học của bạn hôm nay.
         </p>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Total Courses"
+          title="Tổng khóa học"
           value={stats.totalCourses}
           icon={BookOpen}
-          trend="+2 this month"
+          trend="+2 tháng này"
           trendUp={true}
         />
         <StatCard
-          title="Total Students"
+          title="Tổng học viên"
           value={stats.totalStudents}
           icon={Users}
-          trend="+18 this month"
+          trend="+18 tháng này"
           trendUp={true}
         />
         <StatCard
-          title="Monthly Earnings"
+          title="Thu nhập tháng"
           value={stats.monthlyEarnings}
           icon={DollarSign}
-          trend="+12% from last month"
+          trend="+12% so với tháng trước"
           trendUp={true}
         />
         <StatCard
-          title="Average Rating"
+          title="Đánh giá trung bình"
           value={stats.averageRating}
           icon={Star}
-          trend="0.2 increase"
+          trend="Tăng 0.2"
           trendUp={true}
         />
       </div>
@@ -116,7 +116,7 @@ const TutorDashboard: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
-              Recent Activities
+              Hoạt động gần đây
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -141,7 +141,7 @@ const TutorDashboard: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              Upcoming Sessions
+              Buổi học sắp tới
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -170,20 +170,20 @@ const TutorDashboard: React.FC = () => {
       {/* Quick Actions */}
       <Card>
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
+          <CardTitle>Thao tác nhanh</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <button className="py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
             <BookOpen className="h-4 w-4" />
-            Create New Course
+            Tạo khóa học mới
           </button>
           <button className="py-3 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2">
             <Calendar className="h-4 w-4" />
-            Schedule Session
+            Lên lịch buổi học
           </button>
           <button className="py-3 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
             <Award className="h-4 w-4" />
-            View Achievements
+            Xem thành tích
           </button>
         </CardContent>
       </Card>
