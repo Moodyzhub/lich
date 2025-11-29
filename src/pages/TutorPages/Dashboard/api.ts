@@ -1,68 +1,44 @@
 import api from '@/config/axiosConfig';
+import {
+  mockDashboardData,
+  mockDashboardStats,
+  mockRevenueChart,
+  mockRecentActivities,
+  mockUpcomingSessions,
+  mockTopCourses,
+} from './mockData';
+import { DashboardData, DashboardStats, RevenueChart, StudentActivity, UpcomingSession, CourseStats } from './types';
 
-export interface DashboardStats {
-  totalCourses: number;
-  totalStudents: number;
-  totalEarnings: number;
-  monthlyEarnings: number;
-  averageRating: number;
-  totalBookings: number;
-  activePackages: number;
-  pendingBookings: number;
-}
+const USE_MOCK_DATA = true;
 
-export interface RevenueChart {
-  month: string;
-  earnings: number;
-  bookings: number;
-}
-
-export interface StudentActivity {
-  studentId: string;
-  studentName: string;
-  studentAvatar: string;
-  action: string;
-  courseName: string;
-  timestamp: string;
-}
-
-export interface UpcomingSession {
-  id: string;
-  studentName: string;
-  studentAvatar: string;
-  courseName: string;
-  startTime: string;
-  endTime: string;
-  packageName?: string;
-}
-
-export interface CourseStats {
-  courseId: string;
-  courseName: string;
-  enrollments: number;
-  completionRate: number;
-  revenue: number;
-}
-
-export interface DashboardData {
-  stats: DashboardStats;
-  revenueChart: RevenueChart[];
-  recentActivities: StudentActivity[];
-  upcomingSessions: UpcomingSession[];
-  topCourses: CourseStats[];
-}
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const fetchDashboardData = async (): Promise<DashboardData> => {
+  if (USE_MOCK_DATA) {
+    await delay(500);
+    return mockDashboardData;
+  }
+
   const response = await api.get('/tutor/dashboard');
   return response.data.result;
 };
 
 export const fetchDashboardStats = async (): Promise<DashboardStats> => {
+  if (USE_MOCK_DATA) {
+    await delay(300);
+    return mockDashboardStats;
+  }
+
   const response = await api.get('/tutor/dashboard/stats');
   return response.data.result;
 };
 
 export const fetchRevenueChart = async (year?: number): Promise<RevenueChart[]> => {
+  if (USE_MOCK_DATA) {
+    await delay(400);
+    return mockRevenueChart;
+  }
+
   const response = await api.get('/tutor/dashboard/revenue-chart', {
     params: { year: year || new Date().getFullYear() }
   });
@@ -70,6 +46,11 @@ export const fetchRevenueChart = async (year?: number): Promise<RevenueChart[]> 
 };
 
 export const fetchRecentActivities = async (limit = 10): Promise<StudentActivity[]> => {
+  if (USE_MOCK_DATA) {
+    await delay(300);
+    return mockRecentActivities.slice(0, limit);
+  }
+
   const response = await api.get('/tutor/dashboard/activities', {
     params: { limit }
   });
@@ -77,6 +58,11 @@ export const fetchRecentActivities = async (limit = 10): Promise<StudentActivity
 };
 
 export const fetchUpcomingSessions = async (limit = 10): Promise<UpcomingSession[]> => {
+  if (USE_MOCK_DATA) {
+    await delay(300);
+    return mockUpcomingSessions.slice(0, limit);
+  }
+
   const response = await api.get('/tutor/dashboard/upcoming-sessions', {
     params: { limit }
   });
@@ -84,6 +70,11 @@ export const fetchUpcomingSessions = async (limit = 10): Promise<UpcomingSession
 };
 
 export const fetchTopCourses = async (limit = 5): Promise<CourseStats[]> => {
+  if (USE_MOCK_DATA) {
+    await delay(350);
+    return mockTopCourses.slice(0, limit);
+  }
+
   const response = await api.get('/tutor/dashboard/top-courses', {
     params: { limit }
   });

@@ -123,13 +123,35 @@ Response: Array<{
 }>
 ```
 
+## Mock Data vs Real API
+
+Hiện tại dashboard đang sử dụng **mock data** để hiển thị. Để chuyển sang real API:
+
+1. Mở file `api.ts`
+2. Thay đổi `USE_MOCK_DATA = true` thành `USE_MOCK_DATA = false`
+3. Đảm bảo backend API endpoints đã được implement
+
+```typescript
+// api.ts
+const USE_MOCK_DATA = false; // Thay đổi thành false để sử dụng real API
+```
+
+Mock data được định nghĩa trong file `mockData.ts` với dữ liệu mẫu cho:
+- 12 khóa học
+- 245 học viên
+- Doanh thu 125 triệu VND
+- 8 hoạt động gần đây
+- 5 buổi học sắp tới
+- Top 5 khóa học
+
 ## Cấu trúc thư mục
 
 ```
 Dashboard/
 ├── index.tsx                 # Component chính
-├── api.ts                   # API calls
+├── api.ts                   # API calls (hỗ trợ mock/real)
 ├── types.ts                 # TypeScript types
+├── mockData.ts              # Mock data
 ├── README.md               # File này
 ├── components/             # Các component con
 │   ├── StatCard.tsx
