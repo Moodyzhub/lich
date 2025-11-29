@@ -1,192 +1,187 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   BookOpen,
   Users,
   DollarSign,
-  TrendingUp,
-  Calendar,
-  Clock,
-  Award,
   Star,
+  Calendar,
+  Package,
+  TrendingUp,
+  AlertCircle,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  icon: React.ElementType;
-  trend?: string;
-  trendUp?: boolean;
-}
-
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, trend, trendUp }) => {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-gray-600">{title}</CardTitle>
-        <Icon className="h-5 w-5 text-blue-600" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        {trend && (
-          <p className={`text-xs ${trendUp ? 'text-green-600' : 'text-red-600'} flex items-center gap-1 mt-1`}>
-            <TrendingUp className={`h-3 w-3 ${!trendUp && 'rotate-180'}`} />
-            {trend}
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
+import { useQuery } from '@tanstack/react-query';
+import { fetchDashboardData } from './api';
+import { DashboardData } from './types';
+import { useUserInfo } from '@/hooks/useUserInfo';
+import {
+  StatCard,
+  RevenueChart,
+  RecentActivities,
+  UpcomingSessions,
+  TopCourses,
+  QuickActions,
+} from './components';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
 const TutorDashboard: React.FC = () => {
-  // Mock user data
-  const user = {
-    fullName: 'Tutor Name',
-    username: 'tutor_username',
+  const { userInfo } = useUserInfo();
+  const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
+
+  const {
+    data: dashboardData,
+    isLoading,
+    error,
+  } = useQuery<DashboardData>({
+    queryKey: ['tutor-dashboard'],
+    queryFn: fetchDashboardData,
+    refetchInterval: 30000,
+  });
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }).format(value);
   };
 
-  // Mock data
-  const stats = {
-    totalCourses: 12,
-    totalStudents: 245,
-    monthlyEarnings: '$3,450',
-    averageRating: 4.8,
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Không thể tải dữ liệu dashboard. Vui lòng thử lại sau.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  const stats = dashboardData?.stats;
+  const revenueChart = dashboardData?.revenueChart || [];
+  const recentActivities = dashboardData?.recentActivities || [];
+  const upcomingSessions = dashboardData?.upcomingSessions || [];
+  const topCourses = dashboardData?.topCourses || [];
+
+  const calculateTrend = (current: number, previous: number) => {
+    if (!previous) return { trend: '', trendUp: true };
+    const change = ((current - previous) / previous) * 100;
+    const trendUp = change >= 0;
+    const trendText = `${trendUp ? '+' : ''}${change.toFixed(1)}%`;
+    return { trend: trendText, trendUp };
   };
-
-  const recentActivities = [
-    { id: 1, student: 'John Doe', course: 'English for Beginners', action: 'Enrolled', time: '2 hours ago' },
-    { id: 2, student: 'Jane Smith', course: 'Advanced Spanish', action: 'Completed Lesson 5', time: '5 hours ago' },
-    { id: 3, student: 'Mike Johnson', course: 'French Basics', action: 'Left a Review', time: '1 day ago' },
-  ];
-
-  const upcomingSessions = [
-    { id: 1, student: 'John Doe', course: 'English for Beginners', time: 'Today, 2:00 PM' },
-    { id: 2, student: 'Jane Smith', course: 'Advanced Spanish', time: 'Today, 4:30 PM' },
-    { id: 3, student: 'Mike Johnson', course: 'French Basics', time: 'Tomorrow, 10:00 AM' },
-  ];
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-6 text-white">
-        <h1 className="text-3xl font-bold mb-2">
-          Chào mừng trở lại, {user?.fullName || user?.username}! 👋
+    <div className="space-y-6 p-6">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-8 text-white shadow-lg">
+        <h1 className="text-4xl font-bold mb-3">
+          Chào mừng trở lại, {userInfo?.fullName || userInfo?.username}!
         </h1>
-        <p className="text-blue-100">
-          Đây là những gì đang diễn ra với các khóa học của bạn hôm nay.
+        <p className="text-blue-100 text-lg">
+          Đây là tổng quan về hoạt động giảng dạy của bạn
         </p>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Tổng khóa học"
-          value={stats.totalCourses}
+          value={stats?.totalCourses || 0}
           icon={BookOpen}
-          trend="+2 tháng này"
-          trendUp={true}
+          description="Khóa học đã tạo"
         />
         <StatCard
           title="Tổng học viên"
-          value={stats.totalStudents}
+          value={stats?.totalStudents || 0}
           icon={Users}
-          trend="+18 tháng này"
-          trendUp={true}
+          description="Học viên đang học"
         />
         <StatCard
           title="Thu nhập tháng"
-          value={stats.monthlyEarnings}
+          value={formatCurrency(stats?.monthlyEarnings || 0)}
           icon={DollarSign}
-          trend="+12% so với tháng trước"
-          trendUp={true}
+          description="Thu nhập tháng này"
         />
         <StatCard
           title="Đánh giá trung bình"
-          value={stats.averageRating}
+          value={stats?.averageRating?.toFixed(1) || '0.0'}
           icon={Star}
-          trend="Tăng 0.2"
-          trendUp={true}
+          description="Đánh giá từ học viên"
         />
       </div>
 
-      {/* Charts and Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Hoạt động gần đây
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentActivities.map((activity) => (
-                <div key={activity.id} className="flex items-start gap-3 pb-3 border-b last:border-0">
-                  <div className="bg-blue-100 p-2 rounded-full">
-                    <Users className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">{activity.student}</p>
-                    <p className="text-sm text-gray-600">{activity.action} - {activity.course}</p>
-                    <p className="text-xs text-gray-400 mt-1">{activity.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Buổi học sắp tới
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {upcomingSessions.map((session) => (
-                <div key={session.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-blue-100 p-2 rounded-full">
-                      <Users className="h-4 w-4 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{session.student}</p>
-                      <p className="text-sm text-gray-600">{session.course}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-blue-600">{session.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Tổng thu nhập"
+          value={formatCurrency(stats?.totalEarnings || 0)}
+          icon={TrendingUp}
+          description="Tổng thu nhập tích lũy"
+        />
+        <StatCard
+          title="Lượt đặt lịch"
+          value={stats?.totalBookings || 0}
+          icon={Calendar}
+          description="Tổng số lượt đặt"
+        />
+        <StatCard
+          title="Gói dịch vụ"
+          value={stats?.activePackages || 0}
+          icon={Package}
+          description="Gói đang hoạt động"
+        />
+        <StatCard
+          title="Chờ xác nhận"
+          value={stats?.pendingBookings || 0}
+          icon={AlertCircle}
+          description="Lịch chờ xác nhận"
+        />
       </div>
 
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Thao tác nhanh</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <button className="py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
-            <BookOpen className="h-4 w-4" />
-            Tạo khóa học mới
+      <div className="flex justify-end mb-4">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setChartType('bar')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              chartType === 'bar'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+            }`}
+          >
+            Biểu đồ cột
           </button>
-          <button className="py-3 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Lên lịch buổi học
+          <button
+            onClick={() => setChartType('line')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              chartType === 'line'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+            }`}
+          >
+            Biểu đồ đường
           </button>
-          <button className="py-3 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
-            <Award className="h-4 w-4" />
-            Xem thành tích
-          </button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
+      <RevenueChart data={revenueChart} type={chartType} />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <RecentActivities activities={recentActivities} />
+        <UpcomingSessions sessions={upcomingSessions} />
+      </div>
+
+      <TopCourses courses={topCourses} />
+
+      <QuickActions />
     </div>
   );
 };
