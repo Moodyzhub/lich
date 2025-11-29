@@ -1,85 +1,194 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, BookOpen, FileCheck, CreditCard } from 'lucide-react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import {
+  Users,
+  BookOpen,
+  FileCheck,
+  DollarSign,
+  UserCheck,
+  AlertCircle,
+  Calendar,
+  TrendingUp,
+} from 'lucide-react';
+import { fetchAdminDashboardData } from './api';
+import { AdminDashboardData } from './types';
+import {
+  StatCard,
+  RevenueChart,
+  UserGrowthChart,
+  RecentUsers,
+  RecentCourses,
+  PlatformActivities,
+  TopTutors,
+} from './components';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
 const AdminDashboard: React.FC = () => {
-  const stats = [
-    {
-      title: 'Tổng người học',
-      value: '1,234',
-      icon: Users,
-      color: 'bg-blue-500',
-      change: '+12%',
-    },
-    {
-      title: 'Tổng khóa học',
-      value: '456',
-      icon: BookOpen,
-      color: 'bg-green-500',
-      change: '+8%',
-    },
-    {
-      title: 'Chờ duyệt',
-      value: '23',
-      icon: FileCheck,
-      color: 'bg-yellow-500',
-      change: '-5%',
-    },
-    {
-      title: 'Doanh thu tháng',
-      value: '₫125M',
-      icon: CreditCard,
-      color: 'bg-purple-500',
-      change: '+18%',
-    },
-  ];
+  const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
+
+  const {
+    data: dashboardData,
+    isLoading,
+    error,
+  } = useQuery<AdminDashboardData>({
+    queryKey: ['admin-dashboard'],
+    queryFn: fetchAdminDashboardData,
+    refetchInterval: 30000,
+  });
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }).format(value);
+  };
+
+  const formatNumber = (value: number) => {
+    return new Intl.NumberFormat('vi-VN').format(value);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Không thể tải dữ liệu dashboard. Vui lòng thử lại sau.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  const stats = dashboardData?.stats;
+  const revenueChart = dashboardData?.revenueChart || [];
+  const userGrowthChart = dashboardData?.userGrowthChart || [];
+  const recentUsers = dashboardData?.recentUsers || [];
+  const recentCourses = dashboardData?.recentCourses || [];
+  const platformActivities = dashboardData?.platformActivities || [];
+  const topTutors = dashboardData?.topTutors || [];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Chào mừng đến với trang quản trị LinguaHub</p>
+    <div className="space-y-6 p-6">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-8 text-white shadow-lg">
+        <h1 className="text-4xl font-bold mb-3">Dashboard Quản Trị</h1>
+        <p className="text-blue-100 text-lg">
+          Chào mừng đến với hệ thống quản trị LinguaHub
+        </p>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={index}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
-                  {stat.title}
-                </CardTitle>
-                <div className={`${stat.color} p-2 rounded-lg`}>
-                  <Icon className="w-5 h-5 text-white" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-                <p className="text-xs text-gray-600 mt-1">
-                  <span className={stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}>
-                    {stat.change}
-                  </span>
-                  {' '}so với tháng trước
-                </p>
-              </CardContent>
-            </Card>
-          );
-        })}
+        <StatCard
+          title="Tổng người dùng"
+          value={formatNumber(stats?.totalUsers || 0)}
+          icon={Users}
+          color="bg-blue-600"
+          description={`${formatNumber(stats?.totalStudents || 0)} học viên, ${formatNumber(stats?.totalTutors || 0)} tutor`}
+        />
+        <StatCard
+          title="Tổng khóa học"
+          value={formatNumber(stats?.totalCourses || 0)}
+          icon={BookOpen}
+          color="bg-green-600"
+          description={`${formatNumber(stats?.activeCourses || 0)} đang hoạt động`}
+        />
+        <StatCard
+          title="Doanh thu tháng"
+          value={formatCurrency(stats?.monthlyRevenue || 0)}
+          icon={DollarSign}
+          color="bg-emerald-600"
+          description="Thu nhập tháng này"
+        />
+        <StatCard
+          title="Khóa học chờ duyệt"
+          value={formatNumber(stats?.pendingCourses || 0)}
+          icon={FileCheck}
+          color="bg-yellow-600"
+          description="Cần xem xét"
+        />
       </div>
 
-      {/* Content Placeholder */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Tổng quan hệ thống</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-12 text-gray-500">
-            Dashboard management will be implemented here.
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Tổng doanh thu"
+          value={formatCurrency(stats?.totalRevenue || 0)}
+          icon={TrendingUp}
+          color="bg-teal-600"
+          description="Tổng thu nhập hệ thống"
+        />
+        <StatCard
+          title="Đơn tutor chờ duyệt"
+          value={formatNumber(stats?.pendingTutorApplications || 0)}
+          icon={UserCheck}
+          color="bg-orange-600"
+          description="Đơn đăng ký làm tutor"
+        />
+        <StatCard
+          title="Yêu cầu rút tiền"
+          value={formatNumber(stats?.pendingWithdrawals || 0)}
+          icon={AlertCircle}
+          color="bg-red-600"
+          description="Chờ xử lý"
+        />
+        <StatCard
+          title="Tổng lượt đặt lịch"
+          value={formatNumber(stats?.totalBookings || 0)}
+          icon={Calendar}
+          color="bg-violet-600"
+          description={`${formatNumber(stats?.activeUsers || 0)} người dùng hoạt động`}
+        />
+      </div>
+
+      <div className="flex justify-end mb-4">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setChartType('bar')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              chartType === 'bar'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+            }`}
+          >
+            Biểu đồ cột
+          </button>
+          <button
+            onClick={() => setChartType('line')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              chartType === 'line'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+            }`}
+          >
+            Biểu đồ đường
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <RevenueChart data={revenueChart} type={chartType} />
+        <UserGrowthChart data={userGrowthChart} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <RecentUsers users={recentUsers} />
+        <RecentCourses courses={recentCourses} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <PlatformActivities activities={platformActivities} />
+        <TopTutors tutors={topTutors} />
+      </div>
     </div>
   );
 };
