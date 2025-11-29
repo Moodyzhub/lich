@@ -58,7 +58,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ data, type = 'bar' }
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5" />
-          Biểu đồ doanh thu theo tháng
+          Biểu đồ doanh thu và lượt đặt theo tháng
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -72,19 +72,28 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ data, type = 'bar' }
                 tick={{ fill: '#6b7280' }}
               />
               <YAxis
+                yAxisId="left"
                 className="text-xs"
                 tick={{ fill: '#6b7280' }}
                 tickFormatter={formatCurrency}
               />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                className="text-xs"
+                tick={{ fill: '#6b7280' }}
+              />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
               <Bar
+                yAxisId="left"
                 dataKey="earnings"
                 name="Thu nhập"
                 fill="#3b82f6"
                 radius={[8, 8, 0, 0]}
               />
               <Bar
+                yAxisId="right"
                 dataKey="bookings"
                 name="Lượt đặt"
                 fill="#10b981"
@@ -100,13 +109,21 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ data, type = 'bar' }
                 tick={{ fill: '#6b7280' }}
               />
               <YAxis
+                yAxisId="left"
                 className="text-xs"
                 tick={{ fill: '#6b7280' }}
                 tickFormatter={formatCurrency}
               />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                className="text-xs"
+                tick={{ fill: '#6b7280' }}
+              />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
               <Line
+                yAxisId="left"
                 type="monotone"
                 dataKey="earnings"
                 name="Thu nhập"
@@ -115,6 +132,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ data, type = 'bar' }
                 dot={{ fill: '#3b82f6', r: 4 }}
               />
               <Line
+                yAxisId="right"
                 type="monotone"
                 dataKey="bookings"
                 name="Lượt đặt"
